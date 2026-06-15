@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.json">
 <title>婉宁老师教学小助手 🎀</title>
+<link rel="preload" href="liaobiaoxinyi.mp3" as="fetch" crossorigin>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root,[data-theme="cute"]{
@@ -699,7 +700,7 @@ body.view-draw .content{overflow:hidden!important}
     <p>叮咚～双向奔赴，欢迎来到我们的小世界✨</p>
   </div>
 </div>
-<audio id="authBgm" preload="auto" playsinline webkit-playsinline style="display:none"></audio>
+<audio id="authBgm" preload="none" playsinline webkit-playsinline style="display:none"></audio>
 <script src="app-auth.js"></script>
 <div class="app">
   <aside class="sidebar">
@@ -762,14 +763,16 @@ function bootApp() {
     setTimeout(doRender, 120);
     [400, 1000, 2500].forEach(t => setTimeout(doRender, t));
     setTimeout(() => { if (typeof toast === 'function') toast('欢迎回来，婉 ❤️ 这里始终为你亮着光 ✨', 2600); }, 600);
-    setTimeout(() => {
+    const loadHeavy = () => {
       if (typeof loadHeavyModules === 'function') {
         loadHeavyModules(() => {
           if (typeof startGlobalPhotoListener === 'function') startGlobalPhotoListener();
           doRender();
         });
       }
-    }, 800);
+    };
+    if (typeof notifyHeavyModulesReady === 'function') notifyHeavyModulesReady(loadHeavy);
+    else setTimeout(loadHeavy, 12000);
   } catch (e) {
     console.error('bootApp', e);
     const c = document.getElementById('content');

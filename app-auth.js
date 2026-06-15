@@ -11,8 +11,12 @@
   let bgm = null;
   let bgmPlaying = false;
   let bgmWantPlay = false;
+  let bgmBlobUrl = null;
+  let bgmFetchPromise = null;
   let bgmRetryTimer = null;
   let bgmKeepAliveTimer = null;
+  let bgmLastTime = 0;
+  let bgmStallTicks = 0;
   let appScriptsLoading = null;
 
   function ssGet(k) {
@@ -191,15 +195,15 @@
   }
 
   /* ── BGM 角标 ── */
-  function showPlayingBadge() {
+  function showPlayingBadge(text) {
     let badge = document.getElementById('authBgmBadge');
     if (!badge) {
       badge = document.createElement('div');
       badge.id = 'authBgmBadge';
       badge.className = 'auth-bgm-badge';
-      badge.textContent = '🎵 聊表心意';
       document.body.appendChild(badge);
     }
+    badge.textContent = text || '🎵 聊表心意';
     badge.style.display = 'block';
   }
 
@@ -459,6 +463,38 @@
     }
   }
 
+  function fetchBgmBlob() {
+    if (bgmBlobUrl) return Promise.resolve(bgmBlobUrl);
+    if (bgmFetchPromise) return bgmFetchPromise;
+    showPlayingBadge('🎵 聊表心意 · 加载中…');
+    bgmFetchPromise = fetch(BGM_FILE, { cache: 'force-cache' })
+      .then(r => { if (!r.ok) throw new Error('bgm fetch'); return r.blob(); })
+      .then(blob => {
+        bgmBlobUrl = URL.createObjectURL(blob);
+        window._bgmBlobReady = true;
+        if (typeof window._onBgmBlobReady === 'function') window._onBgmBlobReady();
+        return bgmBlobUrl;
+      })
+      .catch(err => {
+        console.warn('bgm blob', err);
+        bgmFetchPromise = null;
+        return null;
+      });
+    return bgmFetchPromise;
+  }
+
+  function applyBgmSrc(a, url) {
+    if (!url || a.src === url) return;
+    const pos = (!a.paused && a.currentTime > 0) ? a.currentTime : 0;
+    a.src = url;
+    a.load();
+    if (pos > 0) {
+      a.addEventListener('loadedmetadata', () => {
+        try { a.currentTime = Math.min(pos, a.duration || pos); } catch {}
+      }, { once: true });
+    }
+  }
+
   function resumeBgm() {
     const a = bgm;
     if (!a || a.ended || !bgmWantPlay) return;
@@ -481,13 +517,13 @@
     el.setAttribute('x5-playsinline', '');
     el.setAttribute('x5-video-player-type', 'h5');
     el.preload = 'auto';
-    if (!el.src || !el.src.includes(BGM_FILE)) el.src = BGM_FILE;
     bgm = el;
     bindBgmKeepAlive();
     el.addEventListener('playing', () => {
       bgmPlaying = true;
+      bgmLastTime = el.currentTime;
       stopBgmRetry();
-      showPlayingBadge();
+      showPlayingBadge('🎵 聊表心意');
       startBgmKeepAlive();
     });
     el.addEventListener('ended', () => {
@@ -497,9 +533,23 @@
       hidePlayingBadge();
       launchRomanticFinale();
     });
-    el.addEventListener('error', () => hidePlayingBadge());
-    el.addEventListener('stalled', () => setTimeout(resumeBgm, 600));
-    el.addEventListener('waiting', () => setTimeout(resumeBgm, 500));
+    el.addEventListener('error', () => showPlayingBadge('🎵 聊表心意 · 加载失败'));
+    el.addEventListener('timeupdate', () => {
+      if (!bgmWantPlay || el.paused || el.ended) return;
+      if (el.currentTime <= bgmLastTime + 0.05) {
+        bgmStallTicks++;
+        if (bgmStallTicks >= 3) {
+          bgmStallTicks = 0;
+          if (bgmBlobUrl && el.src !== bgmBlobUrl) applyBgmSrc(el, bgmBlobUrl);
+          el.play().catch(() => {});
+        }
+      } else {
+        bgmStallTicks = 0;
+        bgmLastTime = el.currentTime;
+      }
+    });
+    el.addEventListener('stalled', () => setTimeout(resumeBgm, 800));
+    el.addEventListener('waiting', () => setTimeout(resumeBgm, 600));
     return bgm;
   }
 
@@ -508,22 +558,32 @@
     if (a.ended) return;
     bgmWantPlay = true;
     if (bgmPlaying && !a.paused) return;
+
     const tryPlay = () => {
       a.play().then(() => {
         bgmPlaying = true;
         stopBgmRetry();
-        showPlayingBadge();
+        showPlayingBadge('🎵 聊表心意');
         startBgmKeepAlive();
       }).catch(() => {});
     };
-    if (a.readyState >= 4) tryPlay();
-    else if (a.readyState >= 2) tryPlay();
-    else {
-      const onReady = () => tryPlay();
-      a.addEventListener('canplaythrough', onReady, { once: true });
-      a.addEventListener('canplay', onReady, { once: true });
-      try { a.load(); } catch {}
-    }
+
+    fetchBgmBlob().then(blobUrl => {
+      if (blobUrl) applyBgmSrc(a, blobUrl);
+      else if (!a.src || !a.src.includes(BGM_FILE)) { a.src = BGM_FILE; a.load(); }
+
+      if (a.readyState >= 3) tryPlay();
+      else {
+        const onReady = () => tryPlay();
+        a.addEventListener('canplaythrough', onReady, { once: true });
+        a.addEventListener('canplay', () => {
+          if (a.buffered.length) {
+            const end = a.buffered.end(a.buffered.length - 1);
+            if (end >= 6 || (a.duration && end / a.duration > 0.08)) tryPlay();
+          }
+        });
+      }
+    });
   }
 
   function setupMobileAutoplay() {
@@ -554,17 +614,25 @@
 
   function scheduleBgm() {
     ensureBgm();
+    fetchBgmBlob();
     startBgm();
-    setupWeixinAutoplay();
+    setupMobileAutoplay();
     let tries = 0;
     stopBgmRetry();
     bgmRetryTimer = setInterval(() => {
       tries++;
-      if (bgmPlaying && !bgm?.paused) { stopBgmRetry(); return; }
-      if (tries > 50) { stopBgmRetry(); return; }
+      if (bgmPlaying && !bgm?.paused && bgm && bgm.currentTime > 1) { stopBgmRetry(); return; }
+      if (tries > 60) { stopBgmRetry(); return; }
       startBgm();
-    }, 1000);
+    }, 1500);
   }
+
+  window.notifyHeavyModulesReady = function (cb) {
+    const run = () => { try { cb?.(); } catch {} };
+    if (window._bgmBlobReady) { setTimeout(run, 1500); return; }
+    window._onBgmBlobReady = () => setTimeout(run, 1500);
+    setTimeout(run, 22000);
+  };
 
   function unlock(onDone) {
     const gate = document.getElementById('authGate');
