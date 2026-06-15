@@ -699,7 +699,7 @@ body.view-draw .content{overflow:hidden!important}
     <p>叮咚～双向奔赴，欢迎来到我们的小世界✨</p>
   </div>
 </div>
-<audio id="authBgm" preload="none" playsinline webkit-playsinline style="display:none"></audio>
+<audio id="authBgm" preload="auto" playsinline webkit-playsinline style="display:none"></audio>
 <script src="app-auth.js"></script>
 <div class="app">
   <aside class="sidebar">
@@ -733,27 +733,40 @@ body.view-draw .content{overflow:hidden!important}
 <div class="toast" id="toast"></div>
 <nav class="bottom-nav" id="bottomNav"></nav>
 
+<script src="app-main.js" defer></script>
+<script src="app-mobile.js" defer></script>
+<script src="app-lazy.js" defer></script>
 <script defer>
 function bootApp() {
-  document.body.classList.add('app-ready');
-  bindUniversalNavigation();
-  if (window._freshLogin && typeof launchWelcomeHeartFireworks === 'function') {
-    window._freshLogin = false;
-    setTimeout(() => launchWelcomeHeartFireworks(), 400);
-  }
-  setTimeout(() => toast('欢迎回来，婉 ❤️ 这里始终为你亮着光 ✨', 2600), 600);
-  render();
-  setTimeout(() => {
-    if (typeof loadHeavyModules === 'function') {
-      loadHeavyModules(() => {
-        if (typeof startGlobalPhotoListener === 'function') startGlobalPhotoListener();
-        if (typeof render === 'function') render();
-      });
+  try {
+    document.body.classList.add('app-ready');
+    if (typeof bindUniversalNavigation === 'function') bindUniversalNavigation();
+    if (window._freshLogin && typeof launchWelcomeHeartFireworks === 'function') {
+      window._freshLogin = false;
+      setTimeout(() => launchWelcomeHeartFireworks(), 400);
     }
-  }, 2500);
+    setTimeout(() => { if (typeof toast === 'function') toast('欢迎回来，婉 ❤️ 这里始终为你亮着光 ✨', 2600); }, 600);
+    if (typeof render === 'function') render();
+    else document.getElementById('content').innerHTML = '<div class="content-inner"><p style="text-align:center;padding:48px 16px;color:var(--text2)">加载中…</p></div>';
+    setTimeout(() => {
+      if (typeof loadHeavyModules === 'function') {
+        loadHeavyModules(() => {
+          if (typeof startGlobalPhotoListener === 'function') startGlobalPhotoListener();
+          if (typeof render === 'function') render();
+        });
+      }
+    }, 1500);
+  } catch (e) {
+    console.error('bootApp', e);
+    const c = document.getElementById('content');
+    if (c) c.innerHTML = '<div class="content-inner"><p style="text-align:center;padding:48px 16px;color:var(--danger)">页面加载遇到问题，请刷新重试</p><button class="btn btn-primary" style="margin:12px auto;display:block" onclick="location.reload()">刷新页面</button></div>';
+  }
 }
-if (typeof initAuthGate === 'function') initAuthGate(bootApp);
-else bootApp();
+function tryBoot() {
+  if (typeof initAuthGate === 'function') initAuthGate(bootApp);
+  else bootApp();
+}
+tryBoot();
 </script>
 </body>
 </html>

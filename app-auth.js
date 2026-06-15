@@ -37,7 +37,10 @@
   }
 
   function loadAppScripts() {
-    if (window._appScriptsReady) return Promise.resolve();
+    if (window._appScriptsReady || (typeof render === 'function')) {
+      window._appScriptsReady = true;
+      return Promise.resolve();
+    }
     if (appScriptsLoading) return appScriptsLoading;
     appScriptsLoading = new Promise(resolve => {
       let i = 0;
@@ -61,11 +64,29 @@
     return appScriptsLoading;
   }
 
+  function waitForRender() {
+    return new Promise(resolve => {
+      if (typeof render === 'function') { resolve(); return; }
+      let n = 0;
+      const tick = () => {
+        if (typeof render === 'function' || ++n > 60) resolve();
+        else setTimeout(tick, 80);
+      };
+      tick();
+    });
+  }
+
+  function ensureAppReady(cb) {
+    return loadAppScripts().then(waitForRender).then(() => cb?.());
+  }
+
   function runBootApp() {
-    if (window._bootAppFn && !window._bootAppCalled) {
-      window._bootAppCalled = true;
-      window._bootAppFn();
-    }
+    ensureAppReady(() => {
+      if (window._bootAppFn && !window._bootAppCalled) {
+        window._bootAppCalled = true;
+        window._bootAppFn();
+      }
+    });
   }
 
   /* ── 登录页 · 点击爱心 / 飘落粒子 ── */
@@ -387,6 +408,12 @@
     }
   }
 
+  function resumeBgm() {
+    const a = bgm;
+    if (!a || a.ended || !bgmPlaying) return;
+    if (a.paused) a.play().catch(() => {});
+  }
+
   function ensureBgm() {
     if (bgm) return bgm;
     let el = document.getElementById('authBgm');
@@ -400,7 +427,8 @@
     el.volume = 1;
     el.setAttribute('playsinline', '');
     el.setAttribute('webkit-playsinline', '');
-    el.preload = 'none';
+    el.setAttribute('x5-playsinline', '');
+    el.preload = 'auto';
     if (!el.src || !el.src.includes(BGM_FILE)) el.src = BGM_FILE;
     bgm = el;
     el.addEventListener('playing', () => {
@@ -414,20 +442,32 @@
       launchRomanticFinale();
     });
     el.addEventListener('error', () => hidePlayingBadge());
-    el.addEventListener('canplay', () => startBgm(), { once: false });
-    el.addEventListener('loadeddata', () => startBgm(), { once: false });
+    el.addEventListener('stalled', () => setTimeout(resumeBgm, 400));
+    el.addEventListener('waiting', () => setTimeout(resumeBgm, 300));
+    el.addEventListener('pause', () => {
+      if (bgmPlaying && !el.ended && el.currentTime > 0.1) setTimeout(resumeBgm, 250);
+    });
     return bgm;
   }
 
   function startBgm() {
     const a = ensureBgm();
     if (a.ended) return;
-    if (bgmPlaying || (!a.paused && a.currentTime > 0)) return;
-    a.play().then(() => {
-      bgmPlaying = true;
-      stopBgmRetry();
-      showPlayingBadge();
-    }).catch(() => {});
+    if (bgmPlaying && !a.paused) return;
+    const tryPlay = () => {
+      a.play().then(() => {
+        bgmPlaying = true;
+        stopBgmRetry();
+        showPlayingBadge();
+      }).catch(() => {});
+    };
+    if (a.readyState >= 3) tryPlay();
+    else {
+      const onReady = () => tryPlay();
+      a.addEventListener('canplaythrough', onReady, { once: true });
+      a.addEventListener('loadeddata', onReady, { once: true });
+      try { a.load(); } catch {}
+    }
   }
 
   function setupWeixinAutoplay() {
@@ -443,23 +483,17 @@
   }
 
   function scheduleBgm() {
-    const go = () => {
-      ensureBgm();
+    ensureBgm();
+    startBgm();
+    setupWeixinAutoplay();
+    let tries = 0;
+    stopBgmRetry();
+    bgmRetryTimer = setInterval(() => {
+      tries++;
+      if (bgmPlaying && !bgm?.paused) { stopBgmRetry(); return; }
+      if (tries > 50) { stopBgmRetry(); return; }
       startBgm();
-      setupWeixinAutoplay();
-      let tries = 0;
-      stopBgmRetry();
-      bgmRetryTimer = setInterval(() => {
-        tries++;
-        if (bgmPlaying || tries > 40) { stopBgmRetry(); return; }
-        startBgm();
-      }, 800);
-    };
-    if (typeof requestIdleCallback === 'function') {
-      requestIdleCallback(go, { timeout: 1800 });
-    } else {
-      setTimeout(go, 500);
-    }
+    }, 1000);
   }
 
   function unlock(onDone) {
@@ -479,7 +513,7 @@
       document.body.classList.add('app-ready');
       window._authEarlyDone = true;
       onDone?.();
-      loadAppScripts().then(runBootApp);
+      runBootApp();
     }, 380);
   }
 
@@ -598,7 +632,7 @@
     window._bootAppFn = onUnlock;
     bindAuthUiEffects();
     if (isAuthed() || window._authEarlyDone) {
-      if (!window._bootAppCalled) loadAppScripts().then(runBootApp);
+      if (!window._bootAppCalled) runBootApp();
       return;
     }
     if (!window._authEarlyBound) bootEarlyAuth();

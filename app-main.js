@@ -341,6 +341,7 @@ function renderHome() {
   const weekM = mistakes.filter(m=>new Date(m.date)>=weekAgo).length;
   const g = getGreeting();
   const bankN = typeof GAOKAO_BANK !== 'undefined' ? GAOKAO_BANK.length : 0;
+  const studentN = typeof students !== 'undefined' ? students.length : 0;
   const favFormulaBlock = formulaFavs.length ? `<div class="home-fav-formulas">
     <div class="hff-head"><span>⭐ 常用公式收藏</span><button class="btn" data-go="refhub" style="padding:4px 10px;font-size:.75rem">全部 →</button></div>
     <div class="fav-formula-grid">${formulaFavs.slice(0, 8).map(f => `<div class="fav-formula-chip" data-ffkey="${esc(f.key)}"><span class="ffc-mod">${esc(f.moduleName || topicName(f.moduleId))}</span><span class="ffc-name">${esc(f.name)}</span></div>`).join('')}</div>
@@ -365,7 +366,7 @@ function renderHome() {
       <div class="quick-btn" data-go="feedback"><div class="icon">💌</div><div class="label">家教反馈单</div><div class="sub">学习目标 · 课后反馈</div></div>
       <div class="quick-btn" data-go="weakness"><div class="icon">📊</div><div class="label">薄弱点分析</div><div class="sub">自动归类错题</div></div>
       <div class="quick-btn" data-go="quiz"><div class="icon">📝</div><div class="label">高考真题</div><div class="sub">题库 ${bankN} 道 · 课前小测</div></div>
-      <div class="quick-btn" data-go="reports"><div class="icon">📈</div><div class="label">学情报告</div><div class="sub">${students.length} 位学生</div></div>
+      <div class="quick-btn" data-go="reports"><div class="icon">📈</div><div class="label">学情报告</div><div class="sub">${studentN} 位学生</div></div>
       <div class="quick-btn" data-go="draw"><div class="icon">💕</div><div class="label">双人画板</div><div class="sub" data-sync-home-status="draw">同屏画画 · 语音 · 回忆相册</div></div>
       <div class="quick-btn" data-go="photos"><div class="icon">📷</div><div class="label">暖光相簿</div><div class="sub" data-sync-home-status="photos">我们的专属小相馆</div></div>
       <div class="quick-btn" data-go="chat"><div class="icon">💬</div><div class="label">悄悄话</div><div class="sub" data-sync-home-status="chat">文字 · 语音 · 图片</div></div>
@@ -599,6 +600,7 @@ function closeModal() { if (typeof stopVoiceInput === 'function') stopVoiceInput
 
 function openMistakeForm(id) {
   const m = id ? mistakes.find(x=>x.id===id) : null;
+  const stuList = typeof students !== 'undefined' ? students : [];
   $('#modalTitle').textContent = m ? '编辑错题' : '记录错题';
   $('#modalBody').innerHTML = `
     <div class="form-row-2">
@@ -607,7 +609,7 @@ function openMistakeForm(id) {
     </div>
     <div class="form-row-2">
       <div class="form-row"><label>章节</label><select id="fTopic">${TOPICS.map(t=>`<option value="${t.id}"${(m?.topic||'func')===t.id?' selected':''}>${t.name}</option>`).join('')}</select></div>
-      <div class="form-row"><label>学生</label><select id="fStudentId"><option value="">不指定</option>${students.map(s=>`<option value="${s.id}"${m?.studentId===s.id?' selected':''}>${esc(s.name)}</option>`).join('')}</select></div>
+      <div class="form-row"><label>学生</label><select id="fStudentId"><option value="">不指定</option>${stuList.map(s=>`<option value="${s.id}"${m?.studentId===s.id?' selected':''}>${esc(s.name)}</option>`).join('')}</select></div>
     </div>
     <div class="form-row"><label>题目 / 错误表现 *</label><textarea id="fProblem" placeholder="写下题目或学生错在哪里">${esc(m?.problem||'')}</textarea></div>
     <div class="form-row"><label>错因分析</label><textarea id="fWrong" placeholder="概念混淆？计算失误？审题不清？">${esc(m?.wrongReason||'')}</textarea></div>
@@ -619,7 +621,7 @@ function openMistakeForm(id) {
     const problem = $('#fProblem').value.trim();
     if (!problem) { toast('请填写题目或错误表现'); return; }
     const sid = $('#fStudentId').value;
-    const stu = students.find(s=>s.id===sid);
+    const stu = stuList.find(s=>s.id===sid);
     const item = {
       id: m?.id||uid(), date: $('#fDate').value, topic: $('#fTopic').value,
       source: $('#fSource').value, studentId:sid, student: stu?.name||'',

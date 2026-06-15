@@ -700,7 +700,7 @@ body.view-draw .content{overflow:hidden!important}
     <p>叮咚～双向奔赴，欢迎来到我们的小世界✨</p>
   </div>
 </div>
-<audio id="authBgm" preload="none" playsinline webkit-playsinline style="display:none"></audio>
+<audio id="authBgm" preload="auto" playsinline webkit-playsinline style="display:none"></audio>
 <script>
 /* === app-auth.js (early) === */
 // 登录门禁 · 轻量优先加载 + 聊表心意 BGM + 登录页爱心特效
@@ -742,7 +742,10 @@ body.view-draw .content{overflow:hidden!important}
   }
 
   function loadAppScripts() {
-    if (window._appScriptsReady) return Promise.resolve();
+    if (window._appScriptsReady || (typeof render === 'function')) {
+      window._appScriptsReady = true;
+      return Promise.resolve();
+    }
     if (appScriptsLoading) return appScriptsLoading;
     appScriptsLoading = new Promise(resolve => {
       let i = 0;
@@ -766,11 +769,29 @@ body.view-draw .content{overflow:hidden!important}
     return appScriptsLoading;
   }
 
+  function waitForRender() {
+    return new Promise(resolve => {
+      if (typeof render === 'function') { resolve(); return; }
+      let n = 0;
+      const tick = () => {
+        if (typeof render === 'function' || ++n > 60) resolve();
+        else setTimeout(tick, 80);
+      };
+      tick();
+    });
+  }
+
+  function ensureAppReady(cb) {
+    return loadAppScripts().then(waitForRender).then(() => cb?.());
+  }
+
   function runBootApp() {
-    if (window._bootAppFn && !window._bootAppCalled) {
-      window._bootAppCalled = true;
-      window._bootAppFn();
-    }
+    ensureAppReady(() => {
+      if (window._bootAppFn && !window._bootAppCalled) {
+        window._bootAppCalled = true;
+        window._bootAppFn();
+      }
+    });
   }
 
   /* ── 登录页 · 点击爱心 / 飘落粒子 ── */
@@ -1092,6 +1113,12 @@ body.view-draw .content{overflow:hidden!important}
     }
   }
 
+  function resumeBgm() {
+    const a = bgm;
+    if (!a || a.ended || !bgmPlaying) return;
+    if (a.paused) a.play().catch(() => {});
+  }
+
   function ensureBgm() {
     if (bgm) return bgm;
     let el = document.getElementById('authBgm');
@@ -1105,7 +1132,8 @@ body.view-draw .content{overflow:hidden!important}
     el.volume = 1;
     el.setAttribute('playsinline', '');
     el.setAttribute('webkit-playsinline', '');
-    el.preload = 'none';
+    el.setAttribute('x5-playsinline', '');
+    el.preload = 'auto';
     if (!el.src || !el.src.includes(BGM_FILE)) el.src = BGM_FILE;
     bgm = el;
     el.addEventListener('playing', () => {
@@ -1119,20 +1147,32 @@ body.view-draw .content{overflow:hidden!important}
       launchRomanticFinale();
     });
     el.addEventListener('error', () => hidePlayingBadge());
-    el.addEventListener('canplay', () => startBgm(), { once: false });
-    el.addEventListener('loadeddata', () => startBgm(), { once: false });
+    el.addEventListener('stalled', () => setTimeout(resumeBgm, 400));
+    el.addEventListener('waiting', () => setTimeout(resumeBgm, 300));
+    el.addEventListener('pause', () => {
+      if (bgmPlaying && !el.ended && el.currentTime > 0.1) setTimeout(resumeBgm, 250);
+    });
     return bgm;
   }
 
   function startBgm() {
     const a = ensureBgm();
     if (a.ended) return;
-    if (bgmPlaying || (!a.paused && a.currentTime > 0)) return;
-    a.play().then(() => {
-      bgmPlaying = true;
-      stopBgmRetry();
-      showPlayingBadge();
-    }).catch(() => {});
+    if (bgmPlaying && !a.paused) return;
+    const tryPlay = () => {
+      a.play().then(() => {
+        bgmPlaying = true;
+        stopBgmRetry();
+        showPlayingBadge();
+      }).catch(() => {});
+    };
+    if (a.readyState >= 3) tryPlay();
+    else {
+      const onReady = () => tryPlay();
+      a.addEventListener('canplaythrough', onReady, { once: true });
+      a.addEventListener('loadeddata', onReady, { once: true });
+      try { a.load(); } catch {}
+    }
   }
 
   function setupWeixinAutoplay() {
@@ -1148,23 +1188,17 @@ body.view-draw .content{overflow:hidden!important}
   }
 
   function scheduleBgm() {
-    const go = () => {
-      ensureBgm();
+    ensureBgm();
+    startBgm();
+    setupWeixinAutoplay();
+    let tries = 0;
+    stopBgmRetry();
+    bgmRetryTimer = setInterval(() => {
+      tries++;
+      if (bgmPlaying && !bgm?.paused) { stopBgmRetry(); return; }
+      if (tries > 50) { stopBgmRetry(); return; }
       startBgm();
-      setupWeixinAutoplay();
-      let tries = 0;
-      stopBgmRetry();
-      bgmRetryTimer = setInterval(() => {
-        tries++;
-        if (bgmPlaying || tries > 40) { stopBgmRetry(); return; }
-        startBgm();
-      }, 800);
-    };
-    if (typeof requestIdleCallback === 'function') {
-      requestIdleCallback(go, { timeout: 1800 });
-    } else {
-      setTimeout(go, 500);
-    }
+    }, 1000);
   }
 
   function unlock(onDone) {
@@ -1184,7 +1218,7 @@ body.view-draw .content{overflow:hidden!important}
       document.body.classList.add('app-ready');
       window._authEarlyDone = true;
       onDone?.();
-      loadAppScripts().then(runBootApp);
+      runBootApp();
     }, 380);
   }
 
@@ -1303,7 +1337,7 @@ body.view-draw .content{overflow:hidden!important}
     window._bootAppFn = onUnlock;
     bindAuthUiEffects();
     if (isAuthed() || window._authEarlyDone) {
-      if (!window._bootAppCalled) loadAppScripts().then(runBootApp);
+      if (!window._bootAppCalled) runBootApp();
       return;
     }
     if (!window._authEarlyBound) bootEarlyAuth();
@@ -1347,27 +1381,40 @@ body.view-draw .content{overflow:hidden!important}
 <div class="toast" id="toast"></div>
 <nav class="bottom-nav" id="bottomNav"></nav>
 
+<script src="app-main.js" defer></script>
+<script src="app-mobile.js" defer></script>
+<script src="app-lazy.js" defer></script>
 <script defer>
 function bootApp() {
-  document.body.classList.add('app-ready');
-  bindUniversalNavigation();
-  if (window._freshLogin && typeof launchWelcomeHeartFireworks === 'function') {
-    window._freshLogin = false;
-    setTimeout(() => launchWelcomeHeartFireworks(), 400);
-  }
-  setTimeout(() => toast('欢迎回来，婉 ❤️ 这里始终为你亮着光 ✨', 2600), 600);
-  render();
-  setTimeout(() => {
-    if (typeof loadHeavyModules === 'function') {
-      loadHeavyModules(() => {
-        if (typeof startGlobalPhotoListener === 'function') startGlobalPhotoListener();
-        if (typeof render === 'function') render();
-      });
+  try {
+    document.body.classList.add('app-ready');
+    if (typeof bindUniversalNavigation === 'function') bindUniversalNavigation();
+    if (window._freshLogin && typeof launchWelcomeHeartFireworks === 'function') {
+      window._freshLogin = false;
+      setTimeout(() => launchWelcomeHeartFireworks(), 400);
     }
-  }, 2500);
+    setTimeout(() => { if (typeof toast === 'function') toast('欢迎回来，婉 ❤️ 这里始终为你亮着光 ✨', 2600); }, 600);
+    if (typeof render === 'function') render();
+    else document.getElementById('content').innerHTML = '<div class="content-inner"><p style="text-align:center;padding:48px 16px;color:var(--text2)">加载中…</p></div>';
+    setTimeout(() => {
+      if (typeof loadHeavyModules === 'function') {
+        loadHeavyModules(() => {
+          if (typeof startGlobalPhotoListener === 'function') startGlobalPhotoListener();
+          if (typeof render === 'function') render();
+        });
+      }
+    }, 1500);
+  } catch (e) {
+    console.error('bootApp', e);
+    const c = document.getElementById('content');
+    if (c) c.innerHTML = '<div class="content-inner"><p style="text-align:center;padding:48px 16px;color:var(--danger)">页面加载遇到问题，请刷新重试</p><button class="btn btn-primary" style="margin:12px auto;display:block" onclick="location.reload()">刷新页面</button></div>';
+  }
 }
-if (typeof initAuthGate === 'function') initAuthGate(bootApp);
-else bootApp();
+function tryBoot() {
+  if (typeof initAuthGate === 'function') initAuthGate(bootApp);
+  else bootApp();
+}
+tryBoot();
 </script>
 </body>
 </html>
