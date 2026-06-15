@@ -711,6 +711,7 @@ body.view-draw .content{overflow:hidden!important}
   const KEY_L1 = 'math-auth-l1';
   const KEY = 'math-auth-session';
   const BGM_FILE = 'liaobiaoxinyi.mp3';
+  const BGM_LITE = 'liaobiaoxinyi-lite.mp3';
   const AUTH_PARTICLES = ['💕', '💗', '💖', '❤️', '🩷', '✨', '⭐', '🌟', '💫', '♡'];
   const APP_SCRIPTS = ['app-main.js', 'app-mobile.js', 'app-lazy.js'];
 
@@ -1172,13 +1173,16 @@ body.view-draw .content{overflow:hidden!important}
   function fetchBgmBlob() {
     if (bgmBlobUrl) return Promise.resolve(bgmBlobUrl);
     if (bgmFetchPromise) return bgmFetchPromise;
-    showPlayingBadge('🎵 聊表心意 · 加载中…');
     bgmFetchPromise = fetch(BGM_FILE, { cache: 'force-cache' })
       .then(r => { if (!r.ok) throw new Error('bgm fetch'); return r.blob(); })
       .then(blob => {
         bgmBlobUrl = URL.createObjectURL(blob);
         window._bgmBlobReady = true;
         if (typeof window._onBgmBlobReady === 'function') window._onBgmBlobReady();
+        const a = bgm;
+        if (a && bgmWantPlay && !a.ended && bgmBlobUrl && a.src !== bgmBlobUrl) {
+          applyBgmSrc(a, bgmBlobUrl, true);
+        }
         return bgmBlobUrl;
       })
       .catch(err => {
@@ -1189,16 +1193,20 @@ body.view-draw .content{overflow:hidden!important}
     return bgmFetchPromise;
   }
 
-  function applyBgmSrc(a, url) {
+  function pickBgmUrl() {
+    return BGM_FILE;
+  }
+
+  function applyBgmSrc(a, url, keepPlay) {
     if (!url || a.src === url) return;
-    const pos = (!a.paused && a.currentTime > 0) ? a.currentTime : 0;
+    const pos = a.currentTime > 0 ? a.currentTime : 0;
+    const shouldPlay = keepPlay || bgmWantPlay;
     a.src = url;
     a.load();
-    if (pos > 0) {
-      a.addEventListener('loadedmetadata', () => {
-        try { a.currentTime = Math.min(pos, a.duration || pos); } catch {}
-      }, { once: true });
-    }
+    a.addEventListener('canplay', () => {
+      try { if (pos > 0) a.currentTime = Math.min(pos, a.duration || pos); } catch {}
+      if (shouldPlay && a.paused) a.play().catch(() => {});
+    }, { once: true });
   }
 
   function resumeBgm() {
@@ -1246,7 +1254,7 @@ body.view-draw .content{overflow:hidden!important}
         bgmStallTicks++;
         if (bgmStallTicks >= 3) {
           bgmStallTicks = 0;
-          if (bgmBlobUrl && el.src !== bgmBlobUrl) applyBgmSrc(el, bgmBlobUrl);
+          if (bgmBlobUrl && el.src !== bgmBlobUrl) applyBgmSrc(el, bgmBlobUrl, true);
           el.play().catch(() => {});
         }
       } else {
@@ -1274,22 +1282,19 @@ body.view-draw .content{overflow:hidden!important}
       }).catch(() => {});
     };
 
-    fetchBgmBlob().then(blobUrl => {
-      if (blobUrl) applyBgmSrc(a, blobUrl);
-      else if (!a.src || !a.src.includes(BGM_FILE)) { a.src = BGM_FILE; a.load(); }
+    const streamUrl = pickBgmUrl();
+    if (!a.src || (!a.src.includes('liaobiaoxinyi') && !a.src.startsWith('blob:'))) {
+      a.src = streamUrl;
+      a.load();
+    }
 
-      if (a.readyState >= 3) tryPlay();
-      else {
-        const onReady = () => tryPlay();
-        a.addEventListener('canplaythrough', onReady, { once: true });
-        a.addEventListener('canplay', () => {
-          if (a.buffered.length) {
-            const end = a.buffered.end(a.buffered.length - 1);
-            if (end >= 6 || (a.duration && end / a.duration > 0.08)) tryPlay();
-          }
-        });
-      }
-    });
+    if (a.readyState >= 2) tryPlay();
+    else {
+      a.addEventListener('canplay', tryPlay, { once: true });
+      a.addEventListener('loadeddata', tryPlay, { once: true });
+    }
+
+    fetchBgmBlob();
   }
 
   function setupMobileAutoplay() {
@@ -1320,24 +1325,32 @@ body.view-draw .content{overflow:hidden!important}
 
   function scheduleBgm() {
     ensureBgm();
-    fetchBgmBlob();
+    const a = bgm;
+    if (a && !a.src) { a.src = pickBgmUrl(); a.load(); }
     startBgm();
     setupMobileAutoplay();
+    fetchBgmBlob();
     let tries = 0;
     stopBgmRetry();
     bgmRetryTimer = setInterval(() => {
       tries++;
-      if (bgmPlaying && !bgm?.paused && bgm && bgm.currentTime > 1) { stopBgmRetry(); return; }
-      if (tries > 60) { stopBgmRetry(); return; }
+      if (bgmPlaying && !bgm?.paused && bgm && bgm.currentTime > 0.5) { stopBgmRetry(); return; }
+      if (tries > 40) { stopBgmRetry(); return; }
       startBgm();
-    }, 1500);
+    }, 1200);
   }
 
   window.notifyHeavyModulesReady = function (cb) {
     const run = () => { try { cb?.(); } catch {} };
-    if (window._bgmBlobReady) { setTimeout(run, 1500); return; }
-    window._onBgmBlobReady = () => setTimeout(run, 1500);
-    setTimeout(run, 22000);
+    let done = false;
+    const once = () => { if (done) return; done = true; run(); };
+    setTimeout(once, 6000);
+    const tick = setInterval(() => {
+      if (bgm && bgmPlaying && bgm.currentTime > 2) {
+        clearInterval(tick);
+        setTimeout(once, 400);
+      }
+    }, 400);
   };
 
   function unlock(onDone) {
