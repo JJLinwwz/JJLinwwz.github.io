@@ -766,9 +766,9 @@ body.view-draw .content{overflow:hidden!important}
   }
 
   function startBgm() {
-    if (isAuthed() && window._authEarlyDone) return;
     const a = ensureBgm();
-    if (!a.paused && a.currentTime > 0 && !a.ended) return;
+    if (a.ended) return;
+    if (!a.paused && a.currentTime > 0) return;
     a.play().then(() => {
       showPlayingBadge();
       document.getElementById('authMusicBtn')?.remove();
