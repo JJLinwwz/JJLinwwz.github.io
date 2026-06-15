@@ -300,6 +300,15 @@ body.auth-pending .bottom-nav{display:none!important}
 @keyframes bgm-heart-burst{0%{opacity:0;transform:translate(-50%,-50%) scale(.15)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}100%{opacity:0;transform:translate(calc(-50% + var(--hx,0)),calc(-50% + var(--hy,0))) scale(.5)}}
 .bgm-heart-glow{position:fixed;pointer-events:none;z-index:10001;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(255,120,160,.45) 0%,transparent 70%);transform:translate(-50%,-50%);animation:bgm-heart-glow 1.8s ease-out forwards}
 @keyframes bgm-heart-glow{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.2)}}
+.bgm-balloon{position:fixed;bottom:-90px;z-index:10002;width:38px;height:48px;border-radius:50% 50% 50% 50%/58% 58% 42% 42%;box-shadow:inset -6px -6px 12px rgba(0,0,0,.08);animation:bgm-balloon-rise 6s ease-in forwards;pointer-events:none}
+.bgm-balloon::after{content:'';position:absolute;bottom:-22px;left:50%;width:1px;height:24px;background:rgba(180,120,140,.45);transform:translateX(-50%)}
+@keyframes bgm-balloon-rise{0%{transform:translateY(0) translateX(0);opacity:0}8%{opacity:.92}100%{transform:translateY(-115vh) translateX(var(--sway,16px));opacity:.65}}
+.bgm-love-wrap{position:fixed;inset:0;z-index:10004;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.bgm-love-text{font-size:clamp(2.4rem,11vw,4.8rem);font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:600;color:#ff5c8a;text-shadow:0 0 28px rgba(255,100,150,.85),0 0 55px rgba(255,170,190,.55);opacity:0;animation:bgm-love-in 4s ease forwards;letter-spacing:.1em}
+@keyframes bgm-love-in{0%{opacity:0;transform:scale(.65);filter:blur(10px)}30%{opacity:1;transform:scale(1.06);filter:blur(2px)}65%{opacity:.95;filter:blur(1px)}100%{opacity:0;transform:scale(1.12);filter:blur(8px)}}
+.bgm-couple-particle{position:fixed;pointer-events:none;z-index:10003;font-size:1rem;transform:translate(-50%,-50%);animation:bgm-couple-spark 2.2s ease-out forwards}
+.bgm-couple-dot{position:fixed;pointer-events:none;z-index:10003;width:5px;height:5px;border-radius:50%;transform:translate(-50%,-50%);animation:bgm-couple-spark 2.2s ease-out forwards}
+@keyframes bgm-couple-spark{0%{opacity:0;transform:translate(-50%,-50%) scale(.1)}18%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}100%{opacity:0;transform:translate(calc(-50% + var(--cx,0)),calc(-50% + var(--cy,-20px))) scale(.4)}}
 .auth-btn:active{transform:scale(.97)}
 /* 二级登录 · 二人秘境 */
 .auth-gate-dual{background:linear-gradient(165deg,#fce4ec 0%,#fdf6f8 35%,#f5f0ff 70%,#fff8fb 100%)}
@@ -690,13 +699,14 @@ body.view-draw .content{overflow:hidden!important}
 <audio id="authBgm" preload="auto" playsinline webkit-playsinline style="display:none"></audio>
 <script>
 /* === app-auth.js (early) === */
-// 登录门禁 · 轻量优先加载 + 聊表心意 BGM
+// 登录门禁 · 轻量优先加载 + 聊表心意 BGM + 登录页爱心特效
 (function () {
   const PASS_L1 = ['060303', '060126'];
   const PASS_L2 = '123';
   const KEY_L1 = 'math-auth-l1';
   const KEY = 'math-auth-session';
   const BGM_FILE = 'liaobiaoxinyi.mp3';
+  const AUTH_PARTICLES = ['💕', '💗', '💖', '❤️', '🩷', '✨', '⭐', '🌟', '💫', '♡'];
 
   let bgm = null;
   let bgmPlaying = false;
@@ -725,6 +735,83 @@ body.view-draw .content{overflow:hidden!important}
     if (danger !== undefined) el.style.color = danger ? 'var(--danger, #c47a7a)' : '';
   }
 
+  /* ── 登录页 · 点击爱心 / 飘落粒子 ── */
+  function spawnAuthHeartBurst(x, y, big) {
+    const icons = ['💕', '💖', '❤️', '🩷', '✨', '⭐', '♡', '🌟', '💗'];
+    const n = big ? 24 : 14;
+    for (let i = 0; i < n; i++) {
+      const el = document.createElement('span');
+      el.className = big ? 'auth-burst auth-burst-big' : 'auth-burst';
+      el.textContent = icons[Math.floor(Math.random() * icons.length)];
+      const angle = (Math.PI * 2 * i) / n + Math.random() * 0.5;
+      const dist = (big ? 55 : 32) + Math.random() * (big ? 100 : 42);
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      el.style.setProperty('--bx', Math.cos(angle) * dist + 'px');
+      el.style.setProperty('--by', Math.sin(angle) * dist + 'px');
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), big ? 1300 : 950);
+    }
+  }
+
+  function bindAuthHeartBtn(id) {
+    const btn = document.getElementById(id);
+    if (!btn || btn._heartBound) return;
+    btn._heartBound = true;
+    const pop = e => {
+      const r = btn.getBoundingClientRect();
+      spawnAuthHeartBurst(r.left + r.width / 2, r.top + r.height / 2, true);
+      btn.classList.add('heart-pop');
+      setTimeout(() => btn.classList.remove('heart-pop'), 350);
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    btn.addEventListener('click', pop);
+    btn.addEventListener('touchend', pop, { passive: false });
+  }
+
+  function startAuthFloat(containerId) {
+    const box = document.getElementById(containerId);
+    if (!box || box._floatOn) return;
+    box._floatOn = true;
+    const spawn = () => {
+      if (!box.isConnected) return;
+      const el = document.createElement('span');
+      el.className = 'auth-float-item';
+      el.textContent = AUTH_PARTICLES[Math.floor(Math.random() * AUTH_PARTICLES.length)];
+      el.style.left = (Math.random() * 100) + '%';
+      el.style.bottom = '-24px';
+      el.style.fontSize = (.7 + Math.random() * .9) + 'rem';
+      el.style.animationDuration = (9 + Math.random() * 8) + 's';
+      el.style.animationDelay = (Math.random() * 2) + 's';
+      box.appendChild(el);
+      setTimeout(() => el.remove(), 20000);
+    };
+    for (let i = 0; i < 6; i++) setTimeout(spawn, i * 400);
+    box._floatTimer = setInterval(spawn, 1800);
+  }
+
+  function stopAuthFloat(containerId) {
+    const box = document.getElementById(containerId);
+    if (!box) return;
+    if (box._floatTimer) clearInterval(box._floatTimer);
+    box._floatOn = false;
+  }
+
+  function bindAuthUiEffects() {
+    const gate = document.getElementById('authGate');
+    const gate2 = document.getElementById('authGate2');
+    if (gate && gate.style.display !== 'none') {
+      startAuthFloat('authParticlesL1');
+      bindAuthHeartBtn('authHeartL1');
+    }
+    if (gate2 && gate2.style.display !== 'none') {
+      startAuthFloat('authParticlesL2');
+      bindAuthHeartBtn('authHeartL2');
+    }
+  }
+
+  /* ── BGM 角标 ── */
   function showPlayingBadge() {
     let badge = document.getElementById('authBgmBadge');
     if (!badge) {
@@ -742,68 +829,214 @@ body.view-draw .content{overflow:hidden!important}
     if (badge) badge.style.display = 'none';
   }
 
+  /* ── 播完 · 浪漫终章烟花 ── */
   function heartPoint(t, scale) {
     const x = 16 * Math.pow(Math.sin(t), 3) * scale;
     const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * scale;
     return { x, y };
   }
 
-  function launchHeartFireworks() {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+  function spawnHeartShape(cx, cy, scale, steps) {
     const icons = ['💕', '💖', '❤️', '🩷', '♥', '💗', '✨'];
     const dotColors = ['#ff6b9d', '#ff8fab', '#ffb3c6', '#e8457a', '#ffc0cb', '#f472b6'];
-    const centers = [
-      { x: w * 0.5, y: h * 0.4, scale: Math.min(w, h) * 0.011 },
-      { x: w * 0.28, y: h * 0.58, scale: Math.min(w, h) * 0.008 },
-      { x: w * 0.72, y: h * 0.58, scale: Math.min(w, h) * 0.008 },
-    ];
+    const glow = document.createElement('div');
+    glow.className = 'bgm-heart-glow';
+    glow.style.left = cx + 'px';
+    glow.style.top = cy + 'px';
+    document.body.appendChild(glow);
+    setTimeout(() => glow.remove(), 2200);
+    for (let i = 0; i < steps; i++) {
+      const t = (Math.PI * 2 * i) / steps;
+      const pt = heartPoint(t, scale);
+      const px = cx + pt.x;
+      const py = cy + pt.y;
+      const burst = 1.5 + Math.random() * 1.0;
+      const hx = pt.x * burst + (Math.random() - 0.5) * 28;
+      const hy = pt.y * burst + (Math.random() - 0.5) * 28;
+      if (i % 2 === 0) {
+        const dot = document.createElement('span');
+        dot.className = 'bgm-heart-dot';
+        dot.style.left = px + 'px';
+        dot.style.top = py + 'px';
+        dot.style.background = dotColors[i % dotColors.length];
+        dot.style.setProperty('--hx', hx + 'px');
+        dot.style.setProperty('--hy', hy + 'px');
+        dot.style.animationDelay = (Math.random() * 0.18) + 's';
+        document.body.appendChild(dot);
+        setTimeout(() => dot.remove(), 2400);
+      }
+      const el = document.createElement('span');
+      el.className = 'bgm-heart-particle';
+      el.textContent = icons[i % icons.length];
+      el.style.left = px + 'px';
+      el.style.top = py + 'px';
+      el.style.setProperty('--hx', hx + 'px');
+      el.style.setProperty('--hy', hy + 'px');
+      el.style.animationDelay = (Math.random() * 0.15) + 's';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 2400);
+    }
+  }
 
-    centers.forEach((center, bi) => {
+  function launchBalloons() {
+    const colors = ['#ff6b9d', '#ff8fab', '#ffb347', '#87ceeb', '#dda0dd', '#98fb98', '#ffc0cb', '#f9a8d4'];
+    for (let i = 0; i < 16; i++) {
       setTimeout(() => {
-        const glow = document.createElement('div');
-        glow.className = 'bgm-heart-glow';
-        glow.style.left = center.x + 'px';
-        glow.style.top = center.y + 'px';
-        document.body.appendChild(glow);
-        setTimeout(() => glow.remove(), 2000);
+        const el = document.createElement('div');
+        el.className = 'bgm-balloon';
+        el.style.left = (5 + Math.random() * 88) + '%';
+        el.style.background = `radial-gradient(circle at 35% 30%, rgba(255,255,255,.55), ${colors[i % colors.length]})`;
+        el.style.setProperty('--sway', ((Math.random() - 0.5) * 60) + 'px');
+        el.style.animationDuration = (4.5 + Math.random() * 3) + 's';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 9000);
+      }, i * 180);
+    }
+  }
 
-        const steps = 48;
-        for (let i = 0; i < steps; i++) {
-          const t = (Math.PI * 2 * i) / steps;
-          const pt = heartPoint(t, center.scale);
-          const px = center.x + pt.x;
-          const py = center.y + pt.y;
-          const burst = 1.6 + Math.random() * 0.8;
-          const hx = pt.x * burst + (Math.random() - 0.5) * 24;
-          const hy = pt.y * burst + (Math.random() - 0.5) * 24;
+  function showLoveYouFinale() {
+    const wrap = document.createElement('div');
+    wrap.className = 'bgm-love-wrap';
+    wrap.innerHTML = '<div class="bgm-love-text">Love You</div>';
+    document.body.appendChild(wrap);
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const cx = w * 0.5;
+    const cy = h * 0.5;
+    for (let i = 0; i < 36; i++) {
+      setTimeout(() => {
+        const angle = (Math.PI * 2 * i) / 36;
+        const dist = 80 + Math.random() * 60;
+        const px = cx + Math.cos(angle) * dist;
+        const py = cy + Math.sin(angle) * dist * 0.55;
+        const el = document.createElement('span');
+        el.className = 'bgm-heart-particle';
+        el.textContent = ['💕', '💖', '❤️', '♥'][i % 4];
+        el.style.left = px + 'px';
+        el.style.top = py + 'px';
+        el.style.fontSize = (1 + Math.random() * 0.6) + 'rem';
+        el.style.setProperty('--hx', (Math.cos(angle) * 40) + 'px');
+        el.style.setProperty('--hy', (Math.sin(angle) * 30 - 20) + 'px');
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 2600);
+      }, i * 40);
+    }
+    setTimeout(() => wrap.remove(), 4500);
+  }
 
-          if (i % 3 === 0) {
-            const dot = document.createElement('span');
-            dot.className = 'bgm-heart-dot';
-            dot.style.left = px + 'px';
-            dot.style.top = py + 'px';
-            dot.style.background = dotColors[i % dotColors.length];
-            dot.style.setProperty('--hx', hx + 'px');
-            dot.style.setProperty('--hy', hy + 'px');
-            dot.style.animationDelay = (Math.random() * 0.15) + 's';
-            document.body.appendChild(dot);
-            setTimeout(() => dot.remove(), 2200);
-          }
+  function buildCouplePoints() {
+    const pts = [];
+    const addCircle = (cx, cy, r, n) => {
+      for (let i = 0; i < n; i++) {
+        const a = (2 * Math.PI * i) / n;
+        pts.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) });
+      }
+    };
+    const addLine = (x1, y1, x2, y2, steps) => {
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        pts.push({ x: x1 + (x2 - x1) * t, y: y1 + (y2 - y1) * t });
+      }
+    };
+    addCircle(0.36, 0.17, 0.055, 18);
+    addCircle(0.64, 0.15, 0.052, 18);
+    addLine(0.36, 0.24, 0.36, 0.58, 10);
+    addLine(0.64, 0.22, 0.64, 0.56, 10);
+    addLine(0.28, 0.30, 0.36, 0.38, 6);
+    addLine(0.28, 0.38, 0.26, 0.52, 5);
+    addLine(0.44, 0.34, 0.56, 0.34, 8);
+    addLine(0.72, 0.30, 0.64, 0.36, 6);
+    addLine(0.74, 0.36, 0.76, 0.50, 5);
+    addLine(0.50, 0.36, 0.48, 0.44, 4);
+    addLine(0.48, 0.44, 0.52, 0.44, 4);
+    addLine(0.34, 0.58, 0.30, 0.88, 8);
+    addLine(0.38, 0.58, 0.40, 0.88, 8);
+    addLine(0.60, 0.56, 0.56, 0.88, 8);
+    addLine(0.68, 0.56, 0.72, 0.88, 8);
+    for (let t = 0; t <= 1; t += 0.07) {
+      pts.push({ x: 0.50 + 0.14 * Math.cos(Math.PI + t * Math.PI), y: 0.36 + 0.12 * Math.sin(t * Math.PI) });
+    }
+    return pts;
+  }
 
-          const el = document.createElement('span');
-          el.className = 'bgm-heart-particle';
-          el.textContent = icons[i % icons.length];
-          el.style.left = px + 'px';
-          el.style.top = py + 'px';
-          el.style.setProperty('--hx', hx + 'px');
-          el.style.setProperty('--hy', hy + 'px');
-          el.style.animationDelay = (Math.random() * 0.12) + 's';
-          document.body.appendChild(el);
-          setTimeout(() => el.remove(), 2200);
+  function launchCoupleSilhouette() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const cx = w * 0.5;
+    const cy = h * 0.52;
+    const scale = Math.min(w, h) * 0.85;
+    const icons = ['💕', '💖', '❤️', '🩷', '✨', '♥'];
+    const dotColors = ['#ff6b9d', '#e8457a', '#ffb3c6', '#ff8fab', '#ffc0cb'];
+    const pts = buildCouplePoints();
+    const glow = document.createElement('div');
+    glow.className = 'bgm-heart-glow';
+    glow.style.width = '200px';
+    glow.style.height = '200px';
+    glow.style.left = cx + 'px';
+    glow.style.top = cy + 'px';
+    document.body.appendChild(glow);
+    setTimeout(() => glow.remove(), 3000);
+    pts.forEach((p, i) => {
+      setTimeout(() => {
+        const px = cx + (p.x - 0.5) * scale;
+        const py = cy + (p.y - 0.42) * scale;
+        const sparkX = (Math.random() - 0.5) * 50;
+        const sparkY = -30 - Math.random() * 50;
+        if (i % 4 === 0) {
+          const dot = document.createElement('span');
+          dot.className = 'bgm-couple-dot';
+          dot.style.left = px + 'px';
+          dot.style.top = py + 'px';
+          dot.style.background = dotColors[i % dotColors.length];
+          dot.style.setProperty('--cx', sparkX + 'px');
+          dot.style.setProperty('--cy', sparkY + 'px');
+          document.body.appendChild(dot);
+          setTimeout(() => dot.remove(), 2600);
         }
-      }, bi * 450);
+        const el = document.createElement('span');
+        el.className = 'bgm-couple-particle';
+        el.textContent = icons[i % icons.length];
+        el.style.left = px + 'px';
+        el.style.top = py + 'px';
+        el.style.setProperty('--cx', sparkX + 'px');
+        el.style.setProperty('--cy', sparkY + 'px');
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 2600);
+      }, i * 18);
     });
+    setTimeout(() => {
+      spawnHeartShape(cx, cy - scale * 0.05, Math.min(w, h) * 0.014, 56);
+    }, pts.length * 18 + 600);
+  }
+
+  function launchRomanticFinale() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const base = Math.min(w, h);
+    const positions = [
+      { x: w * 0.5, y: h * 0.35, s: base * 0.013 },
+      { x: w * 0.22, y: h * 0.28, s: base * 0.009 },
+      { x: w * 0.78, y: h * 0.28, s: base * 0.009 },
+      { x: w * 0.15, y: h * 0.55, s: base * 0.008 },
+      { x: w * 0.85, y: h * 0.55, s: base * 0.008 },
+      { x: w * 0.35, y: h * 0.68, s: base * 0.007 },
+      { x: w * 0.65, y: h * 0.68, s: base * 0.007 },
+      { x: w * 0.5, y: h * 0.18, s: base * 0.010 },
+    ];
+    positions.forEach((p, i) => setTimeout(() => spawnHeartShape(p.x, p.y, p.s, 52), i * 350));
+    setTimeout(launchBalloons, 1200);
+    setTimeout(showLoveYouFinale, 3800);
+    setTimeout(launchCoupleSilhouette, 6200);
+    setTimeout(() => {
+      for (let i = 0; i < 5; i++) {
+        setTimeout(() => spawnHeartShape(
+          w * (0.2 + Math.random() * 0.6),
+          h * (0.2 + Math.random() * 0.5),
+          base * (0.008 + Math.random() * 0.005),
+          44
+        ), i * 400);
+      }
+    }, 9000);
   }
 
   function stopBgmRetry() {
@@ -837,11 +1070,9 @@ body.view-draw .content{overflow:hidden!important}
     el.addEventListener('ended', () => {
       bgmPlaying = false;
       hidePlayingBadge();
-      launchHeartFireworks();
+      launchRomanticFinale();
     });
-    el.addEventListener('error', () => {
-      hidePlayingBadge();
-    });
+    el.addEventListener('error', () => hidePlayingBadge());
     el.addEventListener('canplay', () => startBgm(), { once: false });
     el.addEventListener('loadeddata', () => startBgm(), { once: false });
     return bgm;
@@ -878,10 +1109,7 @@ body.view-draw .content{overflow:hidden!important}
     stopBgmRetry();
     bgmRetryTimer = setInterval(() => {
       tries++;
-      if (bgmPlaying || tries > 40) {
-        stopBgmRetry();
-        return;
-      }
+      if (bgmPlaying || tries > 40) { stopBgmRetry(); return; }
       startBgm();
     }, 800);
   }
@@ -890,6 +1118,8 @@ body.view-draw .content{overflow:hidden!important}
     const gate = document.getElementById('authGate');
     const gate2 = document.getElementById('authGate2');
     const app = document.querySelector('.app');
+    stopAuthFloat('authParticlesL1');
+    stopAuthFloat('authParticlesL2');
     gate?.classList.add('auth-out');
     gate2?.classList.add('auth-out');
     setTimeout(() => {
@@ -922,11 +1152,14 @@ body.view-draw .content{overflow:hidden!important}
     const gate = document.getElementById('authGate');
     const gate2 = document.getElementById('authGate2');
     if (!gate2) return;
+    stopAuthFloat('authParticlesL1');
     gate?.classList.add('auth-out');
     setTimeout(() => {
       if (gate) gate.style.display = 'none';
       gate2.style.display = 'flex';
       gate2.classList.remove('auth-out');
+      startAuthFloat('authParticlesL2');
+      bindAuthHeartBtn('authHeartL2');
       startBgm();
       document.getElementById('authPwd2')?.focus();
     }, 300);
@@ -1002,9 +1235,12 @@ body.view-draw .content{overflow:hidden!important}
       if (gate2) {
         gate2.style.display = 'flex';
         bindLevel2();
+        startAuthFloat('authParticlesL2');
+        bindAuthHeartBtn('authHeartL2');
       }
     } else {
       bindLevel1();
+      bindAuthUiEffects();
     }
 
     window._authEarlyBound = true;
@@ -1015,6 +1251,7 @@ body.view-draw .content{overflow:hidden!important}
 
   window.initAuthGate = function (onUnlock) {
     window._bootAppFn = onUnlock;
+    bindAuthUiEffects();
     if (isAuthed() || window._authEarlyDone) {
       if (!window._bootAppCalled) {
         window._bootAppCalled = true;
@@ -1025,7 +1262,9 @@ body.view-draw .content{overflow:hidden!important}
     if (!window._authEarlyBound) bootEarlyAuth();
   };
 
-  window.launchHeartFireworks = launchHeartFireworks;
+  window.spawnAuthHeartBurst = spawnAuthHeartBurst;
+  window.launchRomanticFinale = launchRomanticFinale;
+  window.launchHeartFireworks = launchRomanticFinale;
 })();
 
 </script>

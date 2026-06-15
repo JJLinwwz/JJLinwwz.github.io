@@ -203,9 +203,23 @@ function bindLevel2Auth(onUnlock) {
   bindAuthHeartBtn('authHeartL2');
 }
 
+function bindAuthUiEffects() {
+  const gate = document.getElementById('authGate');
+  const gate2 = document.getElementById('authGate2');
+  if (gate && gate.style.display !== 'none' && gate.isConnected) {
+    startAuthFloat('authParticlesL1');
+    bindAuthHeartBtn('authHeartL1');
+  }
+  if (gate2 && gate2.style.display !== 'none' && gate2.isConnected) {
+    startAuthFloat('authParticlesL2');
+    bindAuthHeartBtn('authHeartL2');
+  }
+}
+
 function initAuthGate(onUnlock) {
   window._bootAppFn = onUnlock;
   if (window._authEarlyBound) {
+    bindAuthUiEffects();
     if ((isAuthed() || window._authEarlyDone) && !window._bootAppCalled) {
       window._bootAppCalled = true;
       onUnlock?.();

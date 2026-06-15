@@ -299,6 +299,15 @@ body.auth-pending .bottom-nav{display:none!important}
 @keyframes bgm-heart-burst{0%{opacity:0;transform:translate(-50%,-50%) scale(.15)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}100%{opacity:0;transform:translate(calc(-50% + var(--hx,0)),calc(-50% + var(--hy,0))) scale(.5)}}
 .bgm-heart-glow{position:fixed;pointer-events:none;z-index:10001;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(255,120,160,.45) 0%,transparent 70%);transform:translate(-50%,-50%);animation:bgm-heart-glow 1.8s ease-out forwards}
 @keyframes bgm-heart-glow{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.2)}}
+.bgm-balloon{position:fixed;bottom:-90px;z-index:10002;width:38px;height:48px;border-radius:50% 50% 50% 50%/58% 58% 42% 42%;box-shadow:inset -6px -6px 12px rgba(0,0,0,.08);animation:bgm-balloon-rise 6s ease-in forwards;pointer-events:none}
+.bgm-balloon::after{content:'';position:absolute;bottom:-22px;left:50%;width:1px;height:24px;background:rgba(180,120,140,.45);transform:translateX(-50%)}
+@keyframes bgm-balloon-rise{0%{transform:translateY(0) translateX(0);opacity:0}8%{opacity:.92}100%{transform:translateY(-115vh) translateX(var(--sway,16px));opacity:.65}}
+.bgm-love-wrap{position:fixed;inset:0;z-index:10004;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.bgm-love-text{font-size:clamp(2.4rem,11vw,4.8rem);font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:600;color:#ff5c8a;text-shadow:0 0 28px rgba(255,100,150,.85),0 0 55px rgba(255,170,190,.55);opacity:0;animation:bgm-love-in 4s ease forwards;letter-spacing:.1em}
+@keyframes bgm-love-in{0%{opacity:0;transform:scale(.65);filter:blur(10px)}30%{opacity:1;transform:scale(1.06);filter:blur(2px)}65%{opacity:.95;filter:blur(1px)}100%{opacity:0;transform:scale(1.12);filter:blur(8px)}}
+.bgm-couple-particle{position:fixed;pointer-events:none;z-index:10003;font-size:1rem;transform:translate(-50%,-50%);animation:bgm-couple-spark 2.2s ease-out forwards}
+.bgm-couple-dot{position:fixed;pointer-events:none;z-index:10003;width:5px;height:5px;border-radius:50%;transform:translate(-50%,-50%);animation:bgm-couple-spark 2.2s ease-out forwards}
+@keyframes bgm-couple-spark{0%{opacity:0;transform:translate(-50%,-50%) scale(.1)}18%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}100%{opacity:0;transform:translate(calc(-50% + var(--cx,0)),calc(-50% + var(--cy,-20px))) scale(.4)}}
 .auth-btn:active{transform:scale(.97)}
 /* 二级登录 · 二人秘境 */
 .auth-gate-dual{background:linear-gradient(165deg,#fce4ec 0%,#fdf6f8 35%,#f5f0ff 70%,#fff8fb 100%)}
