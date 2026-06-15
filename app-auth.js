@@ -6,10 +6,12 @@
   const KEY = 'math-auth-session';
   const BGM_FILE = 'liaobiaoxinyi.mp3';
   const AUTH_PARTICLES = ['💕', '💗', '💖', '❤️', '🩷', '✨', '⭐', '🌟', '💫', '♡'];
+  const APP_SCRIPTS = ['app-main.js', 'app-mobile.js', 'app-lazy.js'];
 
   let bgm = null;
   let bgmPlaying = false;
   let bgmRetryTimer = null;
+  let appScriptsLoading = null;
 
   function ssGet(k) {
     try { return sessionStorage.getItem(k); } catch { return null; }
@@ -32,6 +34,38 @@
     if (!el) return;
     el.textContent = text;
     if (danger !== undefined) el.style.color = danger ? 'var(--danger, #c47a7a)' : '';
+  }
+
+  function loadAppScripts() {
+    if (window._appScriptsReady) return Promise.resolve();
+    if (appScriptsLoading) return appScriptsLoading;
+    appScriptsLoading = new Promise(resolve => {
+      let i = 0;
+      const next = () => {
+        if (i >= APP_SCRIPTS.length) {
+          window._appScriptsReady = true;
+          resolve();
+          return;
+        }
+        const src = APP_SCRIPTS[i++];
+        if (document.querySelector(`script[src="${src}"]`)) { next(); return; }
+        const s = document.createElement('script');
+        s.src = src;
+        s.async = false;
+        s.onload = next;
+        s.onerror = () => { console.warn('script load:', src); next(); };
+        document.body.appendChild(s);
+      };
+      next();
+    });
+    return appScriptsLoading;
+  }
+
+  function runBootApp() {
+    if (window._bootAppFn && !window._bootAppCalled) {
+      window._bootAppCalled = true;
+      window._bootAppFn();
+    }
   }
 
   /* ── 登录页 · 点击爱心 / 飘落粒子 ── */
@@ -237,23 +271,32 @@
         pts.push({ x: x1 + (x2 - x1) * t, y: y1 + (y2 - y1) * t });
       }
     };
-    addCircle(0.36, 0.17, 0.055, 18);
-    addCircle(0.64, 0.15, 0.052, 18);
-    addLine(0.36, 0.24, 0.36, 0.58, 10);
-    addLine(0.64, 0.22, 0.64, 0.56, 10);
-    addLine(0.28, 0.30, 0.36, 0.38, 6);
-    addLine(0.28, 0.38, 0.26, 0.52, 5);
-    addLine(0.44, 0.34, 0.56, 0.34, 8);
-    addLine(0.72, 0.30, 0.64, 0.36, 6);
-    addLine(0.74, 0.36, 0.76, 0.50, 5);
-    addLine(0.50, 0.36, 0.48, 0.44, 4);
-    addLine(0.48, 0.44, 0.52, 0.44, 4);
-    addLine(0.34, 0.58, 0.30, 0.88, 8);
-    addLine(0.38, 0.58, 0.40, 0.88, 8);
-    addLine(0.60, 0.56, 0.56, 0.88, 8);
-    addLine(0.68, 0.56, 0.72, 0.88, 8);
-    for (let t = 0; t <= 1; t += 0.07) {
-      pts.push({ x: 0.50 + 0.14 * Math.cos(Math.PI + t * Math.PI), y: 0.36 + 0.12 * Math.sin(t * Math.PI) });
+    const addFill = (cx, cy, rx, ry, n) => {
+      for (let j = 0; j < n; j++) {
+        const a = Math.random() * Math.PI * 2;
+        const r = Math.sqrt(Math.random());
+        pts.push({ x: cx + rx * r * Math.cos(a), y: cy + ry * r * Math.sin(a) });
+      }
+    };
+    addCircle(0.34, 0.16, 0.058, 22);
+    addCircle(0.66, 0.14, 0.054, 22);
+    addFill(0.34, 0.38, 0.075, 0.15, 35);
+    addFill(0.66, 0.36, 0.07, 0.14, 35);
+    addLine(0.34, 0.22, 0.34, 0.60, 14);
+    addLine(0.66, 0.20, 0.66, 0.58, 14);
+    addLine(0.24, 0.28, 0.34, 0.36, 10);
+    addLine(0.22, 0.36, 0.20, 0.54, 8);
+    addLine(0.42, 0.32, 0.58, 0.32, 12);
+    addLine(0.76, 0.28, 0.66, 0.34, 10);
+    addLine(0.78, 0.34, 0.80, 0.52, 8);
+    addLine(0.50, 0.34, 0.46, 0.42, 6);
+    addLine(0.46, 0.42, 0.54, 0.42, 6);
+    addLine(0.32, 0.60, 0.26, 0.90, 10);
+    addLine(0.36, 0.60, 0.38, 0.90, 10);
+    addLine(0.62, 0.58, 0.56, 0.90, 10);
+    addLine(0.70, 0.58, 0.76, 0.90, 10);
+    for (let t = 0; t <= 1; t += 0.05) {
+      pts.push({ x: 0.50 + 0.16 * Math.cos(Math.PI + t * Math.PI), y: 0.34 + 0.14 * Math.sin(t * Math.PI) });
     }
     return pts;
   }
@@ -262,50 +305,49 @@
     const w = window.innerWidth;
     const h = window.innerHeight;
     const cx = w * 0.5;
-    const cy = h * 0.52;
-    const scale = Math.min(w, h) * 0.85;
-    const icons = ['💕', '💖', '❤️', '🩷', '✨', '♥'];
-    const dotColors = ['#ff6b9d', '#e8457a', '#ffb3c6', '#ff8fab', '#ffc0cb'];
+    const cy = h * 0.48;
+    const scale = Math.min(w, h) * 1.08;
     const pts = buildCouplePoints();
+    const hold = [];
+
     const glow = document.createElement('div');
-    glow.className = 'bgm-heart-glow';
-    glow.style.width = '200px';
-    glow.style.height = '200px';
+    glow.className = 'bgm-couple-glow';
     glow.style.left = cx + 'px';
     glow.style.top = cy + 'px';
     document.body.appendChild(glow);
-    setTimeout(() => glow.remove(), 3000);
+    setTimeout(() => glow.remove(), 5000);
+
     pts.forEach((p, i) => {
       setTimeout(() => {
         const px = cx + (p.x - 0.5) * scale;
-        const py = cy + (p.y - 0.42) * scale;
-        const sparkX = (Math.random() - 0.5) * 50;
-        const sparkY = -30 - Math.random() * 50;
-        if (i % 4 === 0) {
-          const dot = document.createElement('span');
-          dot.className = 'bgm-couple-dot';
-          dot.style.left = px + 'px';
-          dot.style.top = py + 'px';
-          dot.style.background = dotColors[i % dotColors.length];
-          dot.style.setProperty('--cx', sparkX + 'px');
-          dot.style.setProperty('--cy', sparkY + 'px');
-          document.body.appendChild(dot);
-          setTimeout(() => dot.remove(), 2600);
+        const py = cy + (p.y - 0.38) * scale;
+        const dot = document.createElement('span');
+        dot.className = 'bgm-couple-solid-dot';
+        dot.style.left = px + 'px';
+        dot.style.top = py + 'px';
+        dot.style.animationDelay = (i * 0.006) + 's';
+        document.body.appendChild(dot);
+        hold.push(dot);
+        if (i % 3 === 0) {
+          const el = document.createElement('span');
+          el.className = 'bgm-couple-solid';
+          el.textContent = ['❤️', '💕', '💖', '🩷'][i % 4];
+          el.style.left = px + 'px';
+          el.style.top = py + 'px';
+          el.style.animationDelay = (i * 0.006) + 's';
+          document.body.appendChild(el);
+          hold.push(el);
         }
-        const el = document.createElement('span');
-        el.className = 'bgm-couple-particle';
-        el.textContent = icons[i % icons.length];
-        el.style.left = px + 'px';
-        el.style.top = py + 'px';
-        el.style.setProperty('--cx', sparkX + 'px');
-        el.style.setProperty('--cy', sparkY + 'px');
-        document.body.appendChild(el);
-        setTimeout(() => el.remove(), 2600);
-      }, i * 18);
+      }, i * 6);
     });
+
+    const chestX = cx;
+    const chestY = cy + (0.36 - 0.38) * scale;
     setTimeout(() => {
-      spawnHeartShape(cx, cy - scale * 0.05, Math.min(w, h) * 0.014, 56);
-    }, pts.length * 18 + 600);
+      spawnHeartShape(chestX, chestY, Math.min(w, h) * 0.022, 68);
+      spawnHeartShape(cx, cy - scale * 0.02, Math.min(w, h) * 0.017, 56);
+    }, pts.length * 6 + 900);
+    setTimeout(() => hold.forEach(el => el.remove()), 8500);
   }
 
   function launchRomanticFinale() {
@@ -358,7 +400,7 @@
     el.volume = 1;
     el.setAttribute('playsinline', '');
     el.setAttribute('webkit-playsinline', '');
-    el.preload = 'auto';
+    el.preload = 'none';
     if (!el.src || !el.src.includes(BGM_FILE)) el.src = BGM_FILE;
     bgm = el;
     el.addEventListener('playing', () => {
@@ -401,16 +443,23 @@
   }
 
   function scheduleBgm() {
-    ensureBgm();
-    startBgm();
-    setupWeixinAutoplay();
-    let tries = 0;
-    stopBgmRetry();
-    bgmRetryTimer = setInterval(() => {
-      tries++;
-      if (bgmPlaying || tries > 40) { stopBgmRetry(); return; }
+    const go = () => {
+      ensureBgm();
       startBgm();
-    }, 800);
+      setupWeixinAutoplay();
+      let tries = 0;
+      stopBgmRetry();
+      bgmRetryTimer = setInterval(() => {
+        tries++;
+        if (bgmPlaying || tries > 40) { stopBgmRetry(); return; }
+        startBgm();
+      }, 800);
+    };
+    if (typeof requestIdleCallback === 'function') {
+      requestIdleCallback(go, { timeout: 1800 });
+    } else {
+      setTimeout(go, 500);
+    }
   }
 
   function unlock(onDone) {
@@ -430,10 +479,7 @@
       document.body.classList.add('app-ready');
       window._authEarlyDone = true;
       onDone?.();
-      if (window._bootAppFn && !window._bootAppCalled) {
-        window._bootAppCalled = true;
-        window._bootAppFn();
-      }
+      loadAppScripts().then(runBootApp);
     }, 380);
   }
 
@@ -552,10 +598,7 @@
     window._bootAppFn = onUnlock;
     bindAuthUiEffects();
     if (isAuthed() || window._authEarlyDone) {
-      if (!window._bootAppCalled) {
-        window._bootAppCalled = true;
-        onUnlock?.();
-      }
+      if (!window._bootAppCalled) loadAppScripts().then(runBootApp);
       return;
     }
     if (!window._authEarlyBound) bootEarlyAuth();
