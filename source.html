@@ -745,17 +745,19 @@ function bootApp() {
       window._freshLogin = false;
       setTimeout(() => launchWelcomeHeartFireworks(), 400);
     }
+    const doRender = () => { if (typeof render === 'function') render(); };
+    doRender();
+    requestAnimationFrame(doRender);
+    setTimeout(doRender, 120);
     setTimeout(() => { if (typeof toast === 'function') toast('欢迎回来，婉 ❤️ 这里始终为你亮着光 ✨', 2600); }, 600);
-    if (typeof render === 'function') render();
-    else document.getElementById('content').innerHTML = '<div class="content-inner"><p style="text-align:center;padding:48px 16px;color:var(--text2)">加载中…</p></div>';
     setTimeout(() => {
       if (typeof loadHeavyModules === 'function') {
         loadHeavyModules(() => {
           if (typeof startGlobalPhotoListener === 'function') startGlobalPhotoListener();
-          if (typeof render === 'function') render();
+          doRender();
         });
       }
-    }, 1500);
+    }, 800);
   } catch (e) {
     console.error('bootApp', e);
     const c = document.getElementById('content');

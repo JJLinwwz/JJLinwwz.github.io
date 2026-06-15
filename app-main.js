@@ -229,6 +229,33 @@ function renderNav() {
   $('#nav').innerHTML = h;
 }
 
+function renderBottomNav() {
+  const el = document.getElementById('bottomNav');
+  if (!el) return;
+  el.classList.remove('bnav-hidden');
+  document.body.classList.remove('bnav-auto-hidden');
+  el.style.pointerEvents = 'auto';
+  const tabs = [
+    { v: 'home', icon: '🏠', label: '工作台' },
+    { v: 'refhub', icon: '📐', label: '公式' },
+    { v: 'mistakes', icon: '📕', label: '错题' },
+    { v: 'draw', icon: '🖊️', label: '画板' },
+    { v: 'more', icon: '⚙️', label: '更多' },
+  ];
+  const refViews = ['refhub', 'section', 'formula', 'custom'];
+  const drawViews = ['draw', 'graph'];
+  let cur = 'more';
+  if (view === 'home') cur = 'home';
+  else if (refViews.includes(view) || showFav) cur = 'refhub';
+  else if (view === 'mistakes' || view === 'weakness') cur = 'mistakes';
+  else if (view === 'photos') cur = 'more';
+  else if (drawViews.includes(view)) cur = 'draw';
+  else if (view === 'more' || view === 'feedback' || view === 'reports' || view === 'quiz') cur = 'more';
+  el.innerHTML = tabs.map(t =>
+    `<button type="button" class="bnav-item${cur === t.v ? ' active' : ''}" data-bnav="${t.v}"><span class="bnav-icon">${t.icon}</span><span class="bnav-label">${t.label}</span></button>`
+  ).join('');
+}
+
 function renderTopbar() {
   const isRef = view === 'home' || view === 'section' || showFav || view === 'refhub';
   const mob = window.innerWidth <= 768;
@@ -399,7 +426,10 @@ function renderSection(id) {
     <div class="card"><div class="card-header"><span>公式速查</span><button class="star-btn${isFav?' on':''}" data-fav="${id}">${isFav?'★':'☆'}</button></div><div class="card-body">
       ${d.formulas.map((f,fi)=>{const k=ffKey(id,f.n),on=isFfav(k);return`<div class="formula-item"><div class="formula-item-head"><div class="formula-name">${f.n}</div><button type="button" class="formula-star${on?' on':''}" data-ff-builtin="${id}" data-ff-idx="${fi}">${on?'★':'☆'}</button></div><div class="formula-expr">${f.f}</div>${f.note?`<div class="formula-note">${f.note}</div>`:''}</div>`;}).join('')}
     </div></div>
-    ${(customFormulas||[]).filter(f=>f.topic===id).length?`<div class="card"><div class="card-header">✨ 我的公式</div><div class="card-body">${customFormulas.filter(f=>f.topic===id).map(f=>{const on=isFfav(ffCustomKey(f.id));return`<div class="formula-item"><div class="formula-item-head"><div class="formula-name">${esc(f.name)}</div><button type="button" class="formula-star${on?' on':''}" data-ff-custom="${f.id}">${on?'★':'☆'}</button></div><div class="formula-expr">${f.content}</div>${f.note?`<div class="formula-note">${esc(f.note)}</div>`:''}</div>`;}).join('')}</div></div>`:''}
+    ${(function () {
+      const cf = typeof customFormulas !== 'undefined' ? customFormulas : [];
+      return cf.filter(f => f.topic === id).length ? `<div class="card"><div class="card-header">✨ 我的公式</div><div class="card-body">${cf.filter(f => f.topic === id).map(f => { const on = isFfav(ffCustomKey(f.id)); return `<div class="formula-item"><div class="formula-item-head"><div class="formula-name">${esc(f.name)}</div><button type="button" class="formula-star${on ? ' on' : ''}" data-ff-custom="${f.id}">${on ? '★' : '☆'}</button></div><div class="formula-expr">${f.content}</div>${f.note ? `<div class="formula-note">${esc(f.note)}</div>` : ''}</div>`; }).join('')}</div></div>` : '';
+    })()}
     <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" data-go-quiz="${id}">针对「${d.name}」出题 →</button><button class="btn" data-go="custom">+ 添加自定义</button></div>
   </div>`;
 }
@@ -1780,37 +1810,41 @@ function render() {
   renderNav();
   renderTopbar();
   const c = $('#content');
+  if (!c) return;
   const extViews = ['reports','custom','backup','timer','templates','more','refhub','feedback','weakness'];
-  if (extViews.includes(view) && typeof renderMore !== 'function') {
-    c.innerHTML = '<div class="content-inner"><p style="text-align:center;padding:48px 16px;color:var(--text2)">模块加载中，请稍候…</p></div>';
-    if (typeof loadHeavyModules === 'function') loadHeavyModules(() => render());
-    document.body.classList.toggle('view-draw', view === 'draw');
-    document.body.classList.toggle('view-photos', view === 'photos');
-    ensurePageClickable();
-    return;
+  try {
+    if (extViews.includes(view) && typeof renderMore !== 'function') {
+      c.innerHTML = '<div class="content-inner"><p style="text-align:center;padding:48px 16px;color:var(--text2)">模块加载中，请稍候…</p></div>';
+      if (typeof loadHeavyModules === 'function') loadHeavyModules(() => render());
+    } else if (showFav) c.innerHTML = renderFavs();
+    else if (view === 'home') c.innerHTML = renderHome();
+    else if (view === 'section') c.innerHTML = renderSection(sectionId);
+    else if (view === 'quizfavs') c.innerHTML = renderQuizFavs();
+    else if (view === 'quiz') c.innerHTML = renderQuiz();
+    else if (view === 'formula') c.innerHTML = renderFormula();
+    else if (view === 'draw') c.innerHTML = renderDraw();
+    else if (view === 'photos') c.innerHTML = renderPhotos();
+    else if (view === 'chat') c.innerHTML = renderChat();
+    else if (view === 'graph') c.innerHTML = renderGraph();
+    else if (view === 'mistakes') c.innerHTML = renderMistakes();
+    else if (view === 'notes') c.innerHTML = renderNotes();
+    else if (view === 'reports' && typeof renderReports === 'function') c.innerHTML = renderReports();
+    else if (view === 'custom' && typeof renderCustomFormula === 'function') c.innerHTML = renderCustomFormula();
+    else if (view === 'backup' && typeof renderBackup === 'function') c.innerHTML = renderBackup();
+    else if (view === 'timer' && typeof renderTimer === 'function') c.innerHTML = renderTimer();
+    else if (view === 'templates' && typeof renderTemplates === 'function') c.innerHTML = renderTemplates();
+    else if (view === 'more' && typeof renderMore === 'function') c.innerHTML = renderMore();
+    else if (view === 'refhub' && typeof renderRefHub === 'function') c.innerHTML = renderRefHub();
+    else if (view === 'ref') { view = 'refhub'; c.innerHTML = typeof renderRefHub === 'function' ? renderRefHub() : ''; }
+    else if (view === 'feedback' && typeof renderFeedback === 'function') c.innerHTML = renderFeedback();
+    else if (view === 'weakness' && typeof renderWeakness === 'function') c.innerHTML = renderWeakness();
+    else c.innerHTML = renderHome();
+  } catch (e) {
+    console.error('render content error', e);
+    c.innerHTML = '<div class="content-inner"><div class="home-hero"><h2>加载遇到问题</h2><p style="font-size:.85rem;color:var(--text2);margin:8px 0 14px">请点下方按钮刷新，或稍等片刻重试</p><button class="btn btn-primary" type="button" onclick="location.reload()">刷新页面</button></div></div>';
   }
-  if (showFav) c.innerHTML = renderFavs();
-  else if (view === 'home') c.innerHTML = renderHome();
-  else if (view === 'section') c.innerHTML = renderSection(sectionId);
-  else if (view === 'quizfavs') c.innerHTML = renderQuizFavs();
-  else if (view === 'quiz') c.innerHTML = renderQuiz();
-  else if (view === 'formula') c.innerHTML = renderFormula();
-  else if (view === 'draw') c.innerHTML = renderDraw();
-  else if (view === 'photos') c.innerHTML = renderPhotos();
-  else if (view === 'chat') c.innerHTML = renderChat();
-  else if (view === 'graph') c.innerHTML = renderGraph();
-  else if (view === 'mistakes') c.innerHTML = renderMistakes();
-  else if (view === 'notes') c.innerHTML = renderNotes();
-  else if (view === 'reports' && typeof renderReports === 'function') c.innerHTML = renderReports();
-  else if (view === 'custom' && typeof renderCustomFormula === 'function') c.innerHTML = renderCustomFormula();
-  else if (view === 'backup' && typeof renderBackup === 'function') c.innerHTML = renderBackup();
-  else if (view === 'timer' && typeof renderTimer === 'function') c.innerHTML = renderTimer();
-  else if (view === 'templates' && typeof renderTemplates === 'function') c.innerHTML = renderTemplates();
-  else if (view === 'more' && typeof renderMore === 'function') c.innerHTML = renderMore();
-  else if (view === 'refhub' && typeof renderRefHub === 'function') c.innerHTML = renderRefHub();
-  else if (view === 'ref') { view='refhub'; c.innerHTML = typeof renderRefHub==='function'?renderRefHub():''; }
-  else if (view === 'feedback' && typeof renderFeedback === 'function') c.innerHTML = renderFeedback();
-  else if (view === 'weakness' && typeof renderWeakness === 'function') c.innerHTML = renderWeakness();
+
+  renderBottomNav();
 
   document.body.classList.toggle('view-draw', view === 'draw');
   document.body.classList.toggle('view-photos', view === 'photos');

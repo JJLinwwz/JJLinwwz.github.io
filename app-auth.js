@@ -10,7 +10,9 @@
 
   let bgm = null;
   let bgmPlaying = false;
+  let bgmWantPlay = false;
   let bgmRetryTimer = null;
+  let bgmKeepAliveTimer = null;
   let appScriptsLoading = null;
 
   function ssGet(k) {
@@ -401,6 +403,32 @@
     }, 9000);
   }
 
+  function stopBgmKeepAlive() {
+    if (bgmKeepAliveTimer) {
+      clearInterval(bgmKeepAliveTimer);
+      bgmKeepAliveTimer = null;
+    }
+  }
+
+  function startBgmKeepAlive() {
+    stopBgmKeepAlive();
+    bgmKeepAliveTimer = setInterval(() => {
+      const a = bgm;
+      if (!a || !bgmWantPlay || a.ended) { stopBgmKeepAlive(); return; }
+      if (a.paused) a.play().catch(() => {});
+    }, 2500);
+  }
+
+  function bindBgmKeepAlive() {
+    if (window._bgmKeepAliveBound) return;
+    window._bgmKeepAliveBound = true;
+    const resume = () => { if (bgmWantPlay) resumeBgm(); };
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) resume(); });
+    window.addEventListener('pageshow', resume);
+    document.addEventListener('touchstart', resume, { passive: true, capture: true });
+    document.addEventListener('click', resume, { passive: true, capture: true });
+  }
+
   function stopBgmRetry() {
     if (bgmRetryTimer) {
       clearInterval(bgmRetryTimer);
@@ -410,7 +438,7 @@
 
   function resumeBgm() {
     const a = bgm;
-    if (!a || a.ended || !bgmPlaying) return;
+    if (!a || a.ended || !bgmWantPlay) return;
     if (a.paused) a.play().catch(() => {});
   }
 
@@ -428,44 +456,49 @@
     el.setAttribute('playsinline', '');
     el.setAttribute('webkit-playsinline', '');
     el.setAttribute('x5-playsinline', '');
+    el.setAttribute('x5-video-player-type', 'h5');
     el.preload = 'auto';
     if (!el.src || !el.src.includes(BGM_FILE)) el.src = BGM_FILE;
     bgm = el;
+    bindBgmKeepAlive();
     el.addEventListener('playing', () => {
       bgmPlaying = true;
       stopBgmRetry();
       showPlayingBadge();
+      startBgmKeepAlive();
     });
     el.addEventListener('ended', () => {
       bgmPlaying = false;
+      bgmWantPlay = false;
+      stopBgmKeepAlive();
       hidePlayingBadge();
       launchRomanticFinale();
     });
     el.addEventListener('error', () => hidePlayingBadge());
-    el.addEventListener('stalled', () => setTimeout(resumeBgm, 400));
-    el.addEventListener('waiting', () => setTimeout(resumeBgm, 300));
-    el.addEventListener('pause', () => {
-      if (bgmPlaying && !el.ended && el.currentTime > 0.1) setTimeout(resumeBgm, 250);
-    });
+    el.addEventListener('stalled', () => setTimeout(resumeBgm, 600));
+    el.addEventListener('waiting', () => setTimeout(resumeBgm, 500));
     return bgm;
   }
 
   function startBgm() {
     const a = ensureBgm();
     if (a.ended) return;
+    bgmWantPlay = true;
     if (bgmPlaying && !a.paused) return;
     const tryPlay = () => {
       a.play().then(() => {
         bgmPlaying = true;
         stopBgmRetry();
         showPlayingBadge();
+        startBgmKeepAlive();
       }).catch(() => {});
     };
-    if (a.readyState >= 3) tryPlay();
+    if (a.readyState >= 4) tryPlay();
+    else if (a.readyState >= 2) tryPlay();
     else {
       const onReady = () => tryPlay();
       a.addEventListener('canplaythrough', onReady, { once: true });
-      a.addEventListener('loadeddata', onReady, { once: true });
+      a.addEventListener('canplay', onReady, { once: true });
       try { a.load(); } catch {}
     }
   }
