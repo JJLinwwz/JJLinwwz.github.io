@@ -294,6 +294,11 @@ body.auth-pending .bottom-nav{display:none!important}
 @keyframes auth-burst-big{0%{opacity:1;transform:translate(0,0) scale(.25)}100%{opacity:0;transform:translate(var(--bx,0),var(--by,-48px)) scale(1.65)}}
 .welcome-fw{position:fixed;pointer-events:none;z-index:9998;font-size:1.3rem;animation:welcome-fw 1.35s ease-out forwards}
 @keyframes welcome-fw{0%{opacity:1;transform:translate(0,0) scale(.3)}100%{opacity:0;transform:translate(var(--fx,0),var(--fy,-60px)) scale(1.4)}}
+.bgm-heart-particle{position:fixed;pointer-events:none;z-index:10002;font-size:1.15rem;transform:translate(-50%,-50%);animation:bgm-heart-burst 1.75s ease-out forwards}
+.bgm-heart-dot{position:fixed;pointer-events:none;z-index:10002;width:6px;height:6px;border-radius:50%;transform:translate(-50%,-50%);animation:bgm-heart-burst 1.75s ease-out forwards}
+@keyframes bgm-heart-burst{0%{opacity:0;transform:translate(-50%,-50%) scale(.15)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}100%{opacity:0;transform:translate(calc(-50% + var(--hx,0)),calc(-50% + var(--hy,0))) scale(.5)}}
+.bgm-heart-glow{position:fixed;pointer-events:none;z-index:10001;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(255,120,160,.45) 0%,transparent 70%);transform:translate(-50%,-50%);animation:bgm-heart-glow 1.8s ease-out forwards}
+@keyframes bgm-heart-glow{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.2)}}
 .auth-btn:active{transform:scale(.97)}
 /* 二级登录 · 二人秘境 */
 .auth-gate-dual{background:linear-gradient(165deg,#fce4ec 0%,#fdf6f8 35%,#f5f0ff 70%,#fff8fb 100%)}
@@ -636,9 +641,9 @@ body.view-draw .content{overflow:hidden!important}
     <svg class="auth-deco auth-deco-paw" viewBox="0 0 48 48" aria-hidden="true"><ellipse class="auth-svg" cx="24" cy="30" rx="10" ry="8"/><circle class="auth-svg" cx="12" cy="16" r="5"/><circle class="auth-svg" cx="24" cy="12" r="5"/><circle class="auth-svg" cx="36" cy="16" r="5"/></svg>
     <div class="auth-card">
       <img src="lwl.jpg" class="auth-avatar" alt="蔺婉宁">
-      <h2>婉宁老师教学小助手 🎀</h2>
-      <p class="auth-sub">婉宁老师的专属数学小屋～</p>
-      <p class="auth-hint">🐾 请输入专属小口令</p>
+      <h2>婉宁老师的专属小天地</h2>
+      <p class="auth-sub">只对你开放的温柔角落</p>
+      <p class="auth-hint">🔒 请输入我们的专属口令</p>
       <input type="password" id="authPwd" class="auth-input" inputmode="numeric" autocomplete="off" placeholder="••••••">
       <button type="button" id="authBtn" class="auth-btn">🌷 开门遇见小可爱</button>
       <p id="authMsg" class="auth-msg"></p>
@@ -681,7 +686,7 @@ body.view-draw .content{overflow:hidden!important}
     <p>叮咚～双向奔赴，欢迎来到我们的小世界✨</p>
   </div>
 </div>
-<audio id="authBgm" preload="none" playsinline webkit-playsinline style="display:none"></audio>
+<audio id="authBgm" preload="auto" playsinline webkit-playsinline style="display:none"></audio>
 <script src="app-auth.js"></script>
 <div class="app">
   <aside class="sidebar">

@@ -7,7 +7,8 @@
   const BGM_FILE = 'liaobiaoxinyi.mp3';
 
   let bgm = null;
-  let bgmReady = false;
+  let bgmPlaying = false;
+  let bgmRetryTimer = null;
 
   function ssGet(k) {
     try { return sessionStorage.getItem(k); } catch { return null; }
@@ -21,9 +22,8 @@
   function tap(el, fn) {
     if (!el || el._authTap) return;
     el._authTap = true;
-    const wrap = e => { startBgm(); fn(e); };
-    el.addEventListener('click', wrap);
-    el.addEventListener('touchend', e => { e.preventDefault(); wrap(e); }, { passive: false });
+    el.addEventListener('click', fn);
+    el.addEventListener('touchend', e => { e.preventDefault(); fn(e); }, { passive: false });
   }
 
   function showMsg(id, text, danger) {
@@ -50,6 +50,77 @@
     if (badge) badge.style.display = 'none';
   }
 
+  function heartPoint(t, scale) {
+    const x = 16 * Math.pow(Math.sin(t), 3) * scale;
+    const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * scale;
+    return { x, y };
+  }
+
+  function launchHeartFireworks() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const icons = ['💕', '💖', '❤️', '🩷', '♥', '💗', '✨'];
+    const dotColors = ['#ff6b9d', '#ff8fab', '#ffb3c6', '#e8457a', '#ffc0cb', '#f472b6'];
+    const centers = [
+      { x: w * 0.5, y: h * 0.4, scale: Math.min(w, h) * 0.011 },
+      { x: w * 0.28, y: h * 0.58, scale: Math.min(w, h) * 0.008 },
+      { x: w * 0.72, y: h * 0.58, scale: Math.min(w, h) * 0.008 },
+    ];
+
+    centers.forEach((center, bi) => {
+      setTimeout(() => {
+        const glow = document.createElement('div');
+        glow.className = 'bgm-heart-glow';
+        glow.style.left = center.x + 'px';
+        glow.style.top = center.y + 'px';
+        document.body.appendChild(glow);
+        setTimeout(() => glow.remove(), 2000);
+
+        const steps = 48;
+        for (let i = 0; i < steps; i++) {
+          const t = (Math.PI * 2 * i) / steps;
+          const pt = heartPoint(t, center.scale);
+          const px = center.x + pt.x;
+          const py = center.y + pt.y;
+          const burst = 1.6 + Math.random() * 0.8;
+          const hx = pt.x * burst + (Math.random() - 0.5) * 24;
+          const hy = pt.y * burst + (Math.random() - 0.5) * 24;
+
+          if (i % 3 === 0) {
+            const dot = document.createElement('span');
+            dot.className = 'bgm-heart-dot';
+            dot.style.left = px + 'px';
+            dot.style.top = py + 'px';
+            dot.style.background = dotColors[i % dotColors.length];
+            dot.style.setProperty('--hx', hx + 'px');
+            dot.style.setProperty('--hy', hy + 'px');
+            dot.style.animationDelay = (Math.random() * 0.15) + 's';
+            document.body.appendChild(dot);
+            setTimeout(() => dot.remove(), 2200);
+          }
+
+          const el = document.createElement('span');
+          el.className = 'bgm-heart-particle';
+          el.textContent = icons[i % icons.length];
+          el.style.left = px + 'px';
+          el.style.top = py + 'px';
+          el.style.setProperty('--hx', hx + 'px');
+          el.style.setProperty('--hy', hy + 'px');
+          el.style.animationDelay = (Math.random() * 0.12) + 's';
+          document.body.appendChild(el);
+          setTimeout(() => el.remove(), 2200);
+        }
+      }, bi * 450);
+    });
+  }
+
+  function stopBgmRetry() {
+    if (bgmRetryTimer) {
+      clearInterval(bgmRetryTimer);
+      bgmRetryTimer = null;
+    }
+  }
+
   function ensureBgm() {
     if (bgm) return bgm;
     let el = document.getElementById('authBgm');
@@ -60,58 +131,67 @@
       document.body.appendChild(el);
     }
     el.loop = false;
+    el.volume = 1;
     el.setAttribute('playsinline', '');
     el.setAttribute('webkit-playsinline', '');
     el.preload = 'auto';
     if (!el.src || !el.src.includes(BGM_FILE)) el.src = BGM_FILE;
     bgm = el;
-    el.addEventListener('playing', showPlayingBadge);
+    el.addEventListener('playing', () => {
+      bgmPlaying = true;
+      stopBgmRetry();
+      showPlayingBadge();
+    });
     el.addEventListener('ended', () => {
+      bgmPlaying = false;
       hidePlayingBadge();
-      document.getElementById('authMusicBtn')?.remove();
+      launchHeartFireworks();
     });
     el.addEventListener('error', () => {
       hidePlayingBadge();
-      showMusicBtn('🎵 音乐加载失败，点我重试');
     });
-    el.addEventListener('canplaythrough', () => { bgmReady = true; }, { once: true });
+    el.addEventListener('canplay', () => startBgm(), { once: false });
+    el.addEventListener('loadeddata', () => startBgm(), { once: false });
     return bgm;
   }
 
   function startBgm() {
     const a = ensureBgm();
     if (a.ended) return;
-    if (!a.paused && a.currentTime > 0) return;
+    if (bgmPlaying || (!a.paused && a.currentTime > 0)) return;
     a.play().then(() => {
+      bgmPlaying = true;
+      stopBgmRetry();
       showPlayingBadge();
-      document.getElementById('authMusicBtn')?.remove();
-    }).catch(() => showMusicBtn('🎵 点一下播放 · 聊表心意'));
+    }).catch(() => {});
   }
 
-  function showMusicBtn(label) {
-    if (document.getElementById('authMusicBtn')) return;
-    const gate = document.getElementById('authGate') || document.getElementById('authGate2');
-    if (!gate) return;
-    const btn = document.createElement('button');
-    btn.id = 'authMusicBtn';
-    btn.type = 'button';
-    btn.className = 'auth-music-btn';
-    btn.textContent = label || '🎵 聊表心意';
-    const onTap = e => { e.preventDefault(); e.stopPropagation(); startBgm(); };
-    btn.addEventListener('click', onTap);
-    btn.addEventListener('touchend', onTap, { passive: false });
-    gate.appendChild(btn);
-  }
-
-  function bindBgmGestures() {
-    const onceStart = () => startBgm();
-    document.addEventListener('touchstart', onceStart, { once: true, passive: true });
-    document.addEventListener('click', onceStart, { once: true });
+  function setupWeixinAutoplay() {
+    const run = () => {
+      try {
+        window.WeixinJSBridge.invoke('getNetworkType', {}, () => startBgm(), false);
+      } catch {
+        startBgm();
+      }
+    };
+    if (typeof window.WeixinJSBridge === 'object') run();
+    else document.addEventListener('WeixinJSBridgeReady', run, false);
   }
 
   function scheduleBgm() {
-    bindBgmGestures();
-    setTimeout(startBgm, 800);
+    ensureBgm();
+    startBgm();
+    setupWeixinAutoplay();
+    let tries = 0;
+    stopBgmRetry();
+    bgmRetryTimer = setInterval(() => {
+      tries++;
+      if (bgmPlaying || tries > 40) {
+        stopBgmRetry();
+        return;
+      }
+      startBgm();
+    }, 800);
   }
 
   function unlock(onDone) {
@@ -124,7 +204,6 @@
       gate?.remove();
       gate2?.remove();
       document.getElementById('authSuccessModal')?.remove();
-      document.getElementById('authMusicBtn')?.remove();
       document.body.classList.remove('auth-pending');
       if (app) { app.style.display = ''; app.classList.add('ready'); }
       document.body.classList.add('app-ready');
@@ -187,7 +266,7 @@
     const btn = document.getElementById('authBtn');
     const submit = () => {
       const v = (inp?.value || '').trim();
-      if (!v) { showMsg('authMsg', '要先输入小口令哦～'); return; }
+      if (!v) { showMsg('authMsg', '要先输入我们的小口令哦～'); return; }
       if (PASS_L1.includes(v)) {
         ssSet(KEY_L1, '1');
         bindLevel2();
@@ -253,4 +332,6 @@
     }
     if (!window._authEarlyBound) bootEarlyAuth();
   };
+
+  window.launchHeartFireworks = launchHeartFireworks;
 })();
