@@ -776,6 +776,7 @@ function bootApp() {
     if (c) c.innerHTML = '<div class="content-inner"><p style="text-align:center;padding:48px 16px;color:var(--danger)">页面加载遇到问题，请刷新重试</p><button class="btn btn-primary" style="margin:12px auto;display:block" onclick="location.reload()">刷新页面</button></div>';
   }
 }
+window._bootAppFn = bootApp;
 function tryBoot() {
   try { if (sessionStorage.getItem('math-auth-session') !== '1') return; } catch {}
   if (typeof initAuthGate === 'function') initAuthGate(bootApp);

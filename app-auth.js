@@ -90,13 +90,14 @@
 
   function runBootApp() {
     ensureAppReady(() => {
-      if (!window._bootAppFn) return;
+      const fn = window._bootAppFn;
+      if (!fn) return;
       if (window._bootAppCalled) {
-        try { window._bootAppFn(); } catch (e) { console.error('bootApp retry', e); }
+        try { fn(); } catch (e) { console.error('bootApp retry', e); }
         return;
       }
       window._bootAppCalled = true;
-      try { window._bootAppFn(); } catch (e) { console.error('bootApp', e); window._bootAppCalled = false; }
+      try { fn(); } catch (e) { console.error('bootApp', e); window._bootAppCalled = false; }
     });
   }
 
@@ -490,11 +491,10 @@
 
   function scheduleFetchBgmBlob() {
     if (bgmBlobUrl || bgmFetchPromise) return;
-    const delay = bgmPlaying && bgm && bgm.currentTime > 1 ? 0 : 12000;
     setTimeout(() => {
       if (!bgmWantPlay || bgmBlobUrl || bgmFetchPromise) return;
       fetchBgmBlob();
-    }, delay);
+    }, 800);
   }
 
   function resolveBgmStreamUrl() {
@@ -582,8 +582,8 @@
         bgmLastTime = el.currentTime;
       }
     });
-    el.addEventListener('stalled', () => setTimeout(resumeBgm, 800));
-    el.addEventListener('waiting', () => setTimeout(resumeBgm, 600));
+    el.addEventListener('stalled', () => { fetchBgmBlob(); setTimeout(resumeBgm, 800); });
+    el.addEventListener('waiting', () => { fetchBgmBlob(); setTimeout(resumeBgm, 600); });
     return bgm;
   }
 
@@ -689,8 +689,7 @@
       document.body.classList.add('app-ready');
       window._authEarlyDone = true;
       onDone?.();
-      runBootApp();
-      scheduleBootRetry();
+      setTimeout(() => { runBootApp(); scheduleBootRetry(); }, 1200);
     }, 380);
   }
 
