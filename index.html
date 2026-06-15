@@ -1,4 +1,4 @@
-<!-- 婉宁双人小窝 · GitHub轻量版 -->
+<!-- 蔺&吴双人小窝 · GitHub轻量版 -->
 ﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-<title>婉宁双人小窝 🎀</title>
+<title>蔺&吴双人小窝 🎀</title>
 <link rel="preload" href="xinyi.mp3" as="audio">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -367,6 +367,7 @@ body.auth-pending .bottom-nav{display:none!important}
 .chat-input-actions{display:flex;gap:6px;flex-wrap:wrap}
 .chat-input-actions button{min-width:44px;min-height:44px;padding:0 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface);font-size:1rem;cursor:pointer}
 .chat-input-actions button.on{background:var(--accent-bg);border-color:var(--accent)}
+#chatSendBtn.btn-primary,.chat-input-actions .btn.btn-primary{background:linear-gradient(135deg,#e8789a,#d4a0a8)!important;border:none!important;color:#fff!important;font-size:.88rem;font-weight:600;min-width:64px}
 .chat-empty{text-align:center;color:var(--text2);font-size:.85rem;padding:40px 16px}
 /* 二人小工具 */
 .couple-page{padding-bottom:24px}
@@ -965,7 +966,7 @@ body.view-draw .content{overflow:hidden!important}
   }
 
   function spawnHeartShape(cx, cy, scale, steps) {
-    const icons = ['💕', '💖', '❤️', '🩷', '♥', '💗', '✨'];
+    const icons = ['💕', '💖', '❤️', '🩷', '♥', '💗', '✨', '🌹', '🌻', '🌸'];
     const dotColors = ['#ff6b9d', '#ff8fab', '#ffb3c6', '#e8457a', '#ffc0cb', '#f472b6'];
     const glow = document.createElement('div');
     glow.className = 'bgm-heart-glow';
@@ -1039,7 +1040,7 @@ body.view-draw .content{overflow:hidden!important}
         const py = cy + Math.sin(angle) * dist * 0.55;
         const el = document.createElement('span');
         el.className = 'bgm-heart-particle';
-        el.textContent = ['💕', '💖', '❤️', '♥'][i % 4];
+        el.textContent = ['💕', '💖', '❤️', '♥', '🌹', '🌻'][i % 6];
         el.style.left = px + 'px';
         el.style.top = py + 'px';
         el.style.fontSize = (1 + Math.random() * 0.6) + 'rem';
@@ -1145,6 +1146,26 @@ body.view-draw .content{overflow:hidden!important}
     setTimeout(() => hold.forEach(el => el.remove()), 8500);
   }
 
+  function launchFlowerPetals() {
+    const flowers = ['🌹', '🌻', '🌸', '🌷', '💐'];
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    for (let i = 0; i < 20; i++) {
+      setTimeout(() => {
+        const el = document.createElement('span');
+        el.className = 'bgm-heart-particle';
+        el.textContent = flowers[i % flowers.length];
+        el.style.left = (w * (0.08 + Math.random() * 0.84)) + 'px';
+        el.style.top = (h * (0.12 + Math.random() * 0.55)) + 'px';
+        el.style.fontSize = (1.1 + Math.random() * 0.8) + 'rem';
+        el.style.setProperty('--hx', ((Math.random() - 0.5) * 80) + 'px');
+        el.style.setProperty('--hy', (-30 - Math.random() * 50) + 'px');
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 2600);
+      }, i * 120);
+    }
+  }
+
   function launchRomanticFinale() {
     const w = window.innerWidth;
     const h = window.innerHeight;
@@ -1160,6 +1181,7 @@ body.view-draw .content{overflow:hidden!important}
       { x: w * 0.5, y: h * 0.18, s: base * 0.010 },
     ];
     positions.forEach((p, i) => setTimeout(() => spawnHeartShape(p.x, p.y, p.s, 52), i * 350));
+    setTimeout(launchFlowerPetals, 600);
     setTimeout(launchBalloons, 1200);
     setTimeout(showLoveYouFinale, 3800);
     setTimeout(launchCoupleSilhouette, 6200);
@@ -1612,14 +1634,14 @@ body.view-draw .content{overflow:hidden!important}
 <div class="app">
   <aside class="sidebar">
     <div class="sidebar-header">
-      <h1>婉宁双人小窝</h1>
+      <h1>蔺&吴双人小窝</h1>
       <p>专属陪伴 · 记录成长 · 云端同步 ✨</p>
     </div>
     <nav class="nav-list" id="nav"></nav>
   </aside>
   <div class="main">
     <header class="topbar" id="topbar">
-      <div class="mobile-top-brand" id="mobileTopBrand">🎀 婉宁双人小窝</div>
+      <div class="mobile-top-brand" id="mobileTopBrand">🎀 蔺&吴双人小窝</div>
       <div class="mobile-util-scroll" id="mobileUtilScroll"><div class="mobile-util-row" id="mobileUtilRow"></div></div>
       <div class="search-wrap" id="searchWrap">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>

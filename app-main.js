@@ -804,7 +804,7 @@ function renderChat() {
         <button type="button" id="chatPickImg" title="图片">🖼</button>
         <button type="button" id="chatPickVideo" title="视频">🎬</button>
         <button type="button" id="chatVoiceBtn" title="语音">🎤</button>
-        <button type="button" class="btn btn-primary" id="chatSendBtn" style="min-height:44px;padding:0 16px">发送</button>
+        <button type="button" class="btn btn-primary" id="chatSendBtn" style="min-height:44px;padding:0 16px;color:#fff;background:linear-gradient(135deg,#e8789a,#d4a0a8);border:none">发送</button>
       </div>
       <input type="file" id="chatImgInput" accept="image/*" hidden>
       <input type="file" id="chatVideoInput" accept="video/*" hidden>

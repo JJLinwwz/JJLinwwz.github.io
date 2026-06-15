@@ -223,7 +223,7 @@
   }
 
   function spawnHeartShape(cx, cy, scale, steps) {
-    const icons = ['💕', '💖', '❤️', '🩷', '♥', '💗', '✨'];
+    const icons = ['💕', '💖', '❤️', '🩷', '♥', '💗', '✨', '🌹', '🌻', '🌸'];
     const dotColors = ['#ff6b9d', '#ff8fab', '#ffb3c6', '#e8457a', '#ffc0cb', '#f472b6'];
     const glow = document.createElement('div');
     glow.className = 'bgm-heart-glow';
@@ -297,7 +297,7 @@
         const py = cy + Math.sin(angle) * dist * 0.55;
         const el = document.createElement('span');
         el.className = 'bgm-heart-particle';
-        el.textContent = ['💕', '💖', '❤️', '♥'][i % 4];
+        el.textContent = ['💕', '💖', '❤️', '♥', '🌹', '🌻'][i % 6];
         el.style.left = px + 'px';
         el.style.top = py + 'px';
         el.style.fontSize = (1 + Math.random() * 0.6) + 'rem';
@@ -403,6 +403,26 @@
     setTimeout(() => hold.forEach(el => el.remove()), 8500);
   }
 
+  function launchFlowerPetals() {
+    const flowers = ['🌹', '🌻', '🌸', '🌷', '💐'];
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    for (let i = 0; i < 20; i++) {
+      setTimeout(() => {
+        const el = document.createElement('span');
+        el.className = 'bgm-heart-particle';
+        el.textContent = flowers[i % flowers.length];
+        el.style.left = (w * (0.08 + Math.random() * 0.84)) + 'px';
+        el.style.top = (h * (0.12 + Math.random() * 0.55)) + 'px';
+        el.style.fontSize = (1.1 + Math.random() * 0.8) + 'rem';
+        el.style.setProperty('--hx', ((Math.random() - 0.5) * 80) + 'px');
+        el.style.setProperty('--hy', (-30 - Math.random() * 50) + 'px');
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 2600);
+      }, i * 120);
+    }
+  }
+
   function launchRomanticFinale() {
     const w = window.innerWidth;
     const h = window.innerHeight;
@@ -418,6 +438,7 @@
       { x: w * 0.5, y: h * 0.18, s: base * 0.010 },
     ];
     positions.forEach((p, i) => setTimeout(() => spawnHeartShape(p.x, p.y, p.s, 52), i * 350));
+    setTimeout(launchFlowerPetals, 600);
     setTimeout(launchBalloons, 1200);
     setTimeout(showLoveYouFinale, 3800);
     setTimeout(launchCoupleSilhouette, 6200);

@@ -74,7 +74,7 @@ if (OFFLINE) {
   // GitHub 轻量版：保留外部 js/图片引用，首屏 HTML 更小
 }
 
-const banner = `<!-- 婉宁双人小窝 · ${OFFLINE ? '离线单文件' : 'GitHub轻量'}版 -->\n`;
+const banner = `<!-- 蔺&吴双人小窝 · ${OFFLINE ? '离线单文件' : 'GitHub轻量'}版 -->\n`;
 if (!html.startsWith('<!--')) html = banner + html;
 
 fs.writeFileSync(OUT, html, 'utf8');

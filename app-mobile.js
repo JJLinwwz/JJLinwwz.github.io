@@ -53,7 +53,7 @@ function spawnAuthHeartBurst(x, y, big) {
 }
 
 function launchWelcomeHeartFireworks() {
-  const icons = ['💕', '💖', '❤️', '🩷', '✨', '♡', '💗'];
+  const icons = ['💕', '💖', '❤️', '🩷', '✨', '♡', '💗', '🌹', '🌻', '🌸'];
   const w = window.innerWidth;
   const h = window.innerHeight;
   for (let b = 0; b < 6; b++) {

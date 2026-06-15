@@ -648,10 +648,6 @@ function renderMore() {
       <div class="quick-btn" data-go="${i.go}"><div class="icon">${i.icon}</div><div class="label">${i.label}</div><div class="sub"${i.homeStatus ? ` data-sync-home-status="${i.homeStatus}"` : ''}>${i.sub}</div></div>`).join('')}
     </div>
     <div class="card" style="margin-top:16px"><div class="card-body">
-      <div style="font-size:.84rem;margin-bottom:10px">字体大小（课堂投影 / 给学生看）</div>
-      <div class="font-scale-bar" style="margin-bottom:14px">
-        ${[[0.9,'小'],[1,'标准'],[1.15,'大'],[1.3,'特大'],[1.45,'超大']].map(([v,l])=>`<button class="btn${fontScale===v?' on':''}" onclick="applyFontScale(${v});render()">${l}</button>`).join('')}
-      </div>
       <div style="font-size:.84rem;margin-bottom:10px">显示模式</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn${theme==='cute'?' on':''}" onclick="applyTheme('cute');render()">🎀 柔和</button>
