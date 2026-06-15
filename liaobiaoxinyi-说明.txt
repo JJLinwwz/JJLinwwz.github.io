@@ -4,13 +4,13 @@
 代码已支持登录页播放，但 mp3 文件需你自己准备（版权原因无法内置）。
 
 步骤：
-1. 用你自己的方式获取《聊表心意》mp3（QQ音乐/网易云导出、已购下载等）
-2. 重命名为：liaobiaoxinyi.mp3
+1. 用剪映/QQ音乐/网易云等导出《聊表心意》mp3
+2. 重命名为：xinyi.mp3
 3. 放到本文件夹根目录（与 index.html 同级）
 4. 建议大小 3～8MB，过大 GitHub 上传会慢
 
 然后执行：
-  git add liaobiaoxinyi.mp3
+  git add xinyi.mp3
   git commit -m "add: 登录背景音乐"
   git push origin main
 

@@ -4,8 +4,8 @@
   const PASS_L2 = '123';
   const KEY_L1 = 'math-auth-l1';
   const KEY = 'math-auth-session';
-  const BGM_FILE = 'liaobiaoxinyi.mp3';
-  const BGM_LITE = 'liaobiaoxinyi-lite.mp3';
+  const BGM_FILE = 'xinyi.mp3';
+  const BGM_LITE = 'xinyi-lite.mp3';
   const AUTH_PARTICLES = ['💕', '💗', '💖', '❤️', '🩷', '✨', '⭐', '🌟', '💫', '♡'];
   const APP_SCRIPTS = ['app-main.js', 'app-mobile.js', 'app-lazy.js'];
 
@@ -504,7 +504,7 @@
         bgmStreamUrl = BGM_LITE;
         const a = bgm || document.getElementById('authBgm');
         if (!a || a.ended || !bgmWantPlay) return;
-        if (!a.src.includes('liaobiaoxinyi')) return;
+        if (!a.src.includes('xinyi')) return;
         if (a.currentTime > 0.5 && !a.paused) return;
         applyBgmSrc(a, BGM_LITE, true);
       })
@@ -603,7 +603,7 @@
     };
 
     const streamUrl = pickBgmUrl();
-    if (!a.src || (!a.src.includes('liaobiaoxinyi') && !a.src.startsWith('blob:'))) {
+    if (!a.src || (!a.src.includes('xinyi') && !a.src.startsWith('blob:'))) {
       a.src = streamUrl;
       a.load();
     }

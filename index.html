@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
 <title>婉宁老师教学小助手 🎀</title>
-<link rel="preload" href="liaobiaoxinyi.mp3" as="audio">
+<link rel="preload" href="xinyi.mp3" as="audio">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root,[data-theme="cute"]{
@@ -701,7 +701,7 @@ body.view-draw .content{overflow:hidden!important}
     <p>叮咚～双向奔赴，欢迎来到我们的小世界✨</p>
   </div>
 </div>
-<audio id="authBgm" src="liaobiaoxinyi.mp3" preload="auto" playsinline webkit-playsinline style="display:none"></audio>
+<audio id="authBgm" src="xinyi.mp3" preload="auto" playsinline webkit-playsinline style="display:none"></audio>
 <script>
 /* === app-auth.js (early) === */
 // 登录门禁 · 轻量优先加载 + 聊表心意 BGM + 登录页爱心特效
@@ -710,8 +710,8 @@ body.view-draw .content{overflow:hidden!important}
   const PASS_L2 = '123';
   const KEY_L1 = 'math-auth-l1';
   const KEY = 'math-auth-session';
-  const BGM_FILE = 'liaobiaoxinyi.mp3';
-  const BGM_LITE = 'liaobiaoxinyi-lite.mp3';
+  const BGM_FILE = 'xinyi.mp3';
+  const BGM_LITE = 'xinyi-lite.mp3';
   const AUTH_PARTICLES = ['💕', '💗', '💖', '❤️', '🩷', '✨', '⭐', '🌟', '💫', '♡'];
   const APP_SCRIPTS = ['app-main.js', 'app-mobile.js', 'app-lazy.js'];
 
@@ -1210,7 +1210,7 @@ body.view-draw .content{overflow:hidden!important}
         bgmStreamUrl = BGM_LITE;
         const a = bgm || document.getElementById('authBgm');
         if (!a || a.ended || !bgmWantPlay) return;
-        if (!a.src.includes('liaobiaoxinyi')) return;
+        if (!a.src.includes('xinyi')) return;
         if (a.currentTime > 0.5 && !a.paused) return;
         applyBgmSrc(a, BGM_LITE, true);
       })
@@ -1309,7 +1309,7 @@ body.view-draw .content{overflow:hidden!important}
     };
 
     const streamUrl = pickBgmUrl();
-    if (!a.src || (!a.src.includes('liaobiaoxinyi') && !a.src.startsWith('blob:'))) {
+    if (!a.src || (!a.src.includes('xinyi') && !a.src.startsWith('blob:'))) {
       a.src = streamUrl;
       a.load();
     }

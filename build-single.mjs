@@ -87,6 +87,6 @@ if (!OFFLINE) {
   console.log('  GitHub 部署：上传整个文件夹（含 lib/ 与各 .js）');
   console.log('  访问 https://你的用户名.github.io 即可\n');
 }
-if (!fs.existsSync(path.join(ROOT, 'liaobiaoxinyi.mp3'))) {
-  console.log('  提示：将《聊表心意》mp3 命名为 liaobiaoxinyi.mp3 放到项目根目录\n');
+if (!fs.existsSync(path.join(ROOT, 'xinyi.mp3'))) {
+  console.log('  提示：将《聊表心意》mp3 命名为 xinyi.mp3 放到项目根目录\n');
 }
