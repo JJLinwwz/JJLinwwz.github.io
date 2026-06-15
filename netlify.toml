@@ -1,0 +1,5 @@
+# 静态托管：build 生成 index.html，根路径自动访问
+
+[build]
+  publish = "."
+  command = "node build-single.mjs"

@@ -1,0 +1,11 @@
+{
+  "name": "婉宁老师教学小助手",
+  "short_name": "婉宁老师",
+  "description": "高中数学教学助手 - 离线可用",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8f6f4",
+  "theme_color": "#f3ecee",
+  "orientation": "portrait-primary",
+  "icons": []
+}
