@@ -18,6 +18,7 @@
   let bgmKeepAliveTimer = null;
   let bgmLastTime = 0;
   let bgmStallTicks = 0;
+  let bgmStreamUrl = BGM_FILE;
   let appScriptsLoading = null;
 
   function ssGet(k) {
@@ -487,8 +488,31 @@
     return bgmFetchPromise;
   }
 
+  function scheduleFetchBgmBlob() {
+    if (bgmBlobUrl || bgmFetchPromise) return;
+    const delay = bgmPlaying && bgm && bgm.currentTime > 1 ? 0 : 12000;
+    setTimeout(() => {
+      if (!bgmWantPlay || bgmBlobUrl || bgmFetchPromise) return;
+      fetchBgmBlob();
+    }, delay);
+  }
+
+  function resolveBgmStreamUrl() {
+    fetch(BGM_LITE, { method: 'HEAD', cache: 'force-cache' })
+      .then(r => {
+        if (!r.ok) return;
+        bgmStreamUrl = BGM_LITE;
+        const a = bgm || document.getElementById('authBgm');
+        if (!a || a.ended || !bgmWantPlay) return;
+        if (!a.src.includes('liaobiaoxinyi')) return;
+        if (a.currentTime > 0.5 && !a.paused) return;
+        applyBgmSrc(a, BGM_LITE, true);
+      })
+      .catch(() => {});
+  }
+
   function pickBgmUrl() {
-    return BGM_FILE;
+    return bgmStreamUrl;
   }
 
   function applyBgmSrc(a, url, keepPlay) {
@@ -533,6 +557,7 @@
       stopBgmRetry();
       showPlayingBadge('🎵 聊表心意');
       startBgmKeepAlive();
+      scheduleFetchBgmBlob();
     });
     el.addEventListener('ended', () => {
       bgmPlaying = false;
@@ -549,6 +574,7 @@
         if (bgmStallTicks >= 3) {
           bgmStallTicks = 0;
           if (bgmBlobUrl && el.src !== bgmBlobUrl) applyBgmSrc(el, bgmBlobUrl, true);
+          else scheduleFetchBgmBlob();
           el.play().catch(() => {});
         }
       } else {
@@ -584,11 +610,10 @@
 
     if (a.readyState >= 2) tryPlay();
     else {
+      showPlayingBadge('🎵 聊表心意 · 缓冲中');
       a.addEventListener('canplay', tryPlay, { once: true });
       a.addEventListener('loadeddata', tryPlay, { once: true });
     }
-
-    fetchBgmBlob();
   }
 
   function setupMobileAutoplay() {
@@ -621,9 +646,9 @@
     ensureBgm();
     const a = bgm;
     if (a && !a.src) { a.src = pickBgmUrl(); a.load(); }
+    resolveBgmStreamUrl();
     startBgm();
     setupMobileAutoplay();
-    fetchBgmBlob();
     let tries = 0;
     stopBgmRetry();
     bgmRetryTimer = setInterval(() => {

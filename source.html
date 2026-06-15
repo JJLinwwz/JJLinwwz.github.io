@@ -700,7 +700,7 @@ body.view-draw .content{overflow:hidden!important}
     <p>叮咚～双向奔赴，欢迎来到我们的小世界✨</p>
   </div>
 </div>
-<audio id="authBgm" preload="auto" playsinline webkit-playsinline style="display:none"></audio>
+<audio id="authBgm" src="liaobiaoxinyi.mp3" preload="auto" playsinline webkit-playsinline style="display:none"></audio>
 <script src="app-auth.js"></script>
 <div class="app">
   <aside class="sidebar">
@@ -745,9 +745,6 @@ body.view-draw .content{overflow:hidden!important}
 <div class="toast" id="toast"></div>
 <nav class="bottom-nav" id="bottomNav"></nav>
 
-<script src="app-main.js" defer></script>
-<script src="app-mobile.js" defer></script>
-<script src="app-lazy.js" defer></script>
 <script defer>
 function bootApp() {
   try {
@@ -780,6 +777,7 @@ function bootApp() {
   }
 }
 function tryBoot() {
+  try { if (sessionStorage.getItem('math-auth-session') !== '1') return; } catch {}
   if (typeof initAuthGate === 'function') initAuthGate(bootApp);
   else bootApp();
 }

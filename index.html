@@ -701,7 +701,7 @@ body.view-draw .content{overflow:hidden!important}
     <p>叮咚～双向奔赴，欢迎来到我们的小世界✨</p>
   </div>
 </div>
-<audio id="authBgm" preload="auto" playsinline webkit-playsinline style="display:none"></audio>
+<audio id="authBgm" src="liaobiaoxinyi.mp3" preload="auto" playsinline webkit-playsinline style="display:none"></audio>
 <script>
 /* === app-auth.js (early) === */
 // 登录门禁 · 轻量优先加载 + 聊表心意 BGM + 登录页爱心特效
@@ -724,6 +724,7 @@ body.view-draw .content{overflow:hidden!important}
   let bgmKeepAliveTimer = null;
   let bgmLastTime = 0;
   let bgmStallTicks = 0;
+  let bgmStreamUrl = BGM_FILE;
   let appScriptsLoading = null;
 
   function ssGet(k) {
@@ -1193,8 +1194,31 @@ body.view-draw .content{overflow:hidden!important}
     return bgmFetchPromise;
   }
 
+  function scheduleFetchBgmBlob() {
+    if (bgmBlobUrl || bgmFetchPromise) return;
+    const delay = bgmPlaying && bgm && bgm.currentTime > 1 ? 0 : 12000;
+    setTimeout(() => {
+      if (!bgmWantPlay || bgmBlobUrl || bgmFetchPromise) return;
+      fetchBgmBlob();
+    }, delay);
+  }
+
+  function resolveBgmStreamUrl() {
+    fetch(BGM_LITE, { method: 'HEAD', cache: 'force-cache' })
+      .then(r => {
+        if (!r.ok) return;
+        bgmStreamUrl = BGM_LITE;
+        const a = bgm || document.getElementById('authBgm');
+        if (!a || a.ended || !bgmWantPlay) return;
+        if (!a.src.includes('liaobiaoxinyi')) return;
+        if (a.currentTime > 0.5 && !a.paused) return;
+        applyBgmSrc(a, BGM_LITE, true);
+      })
+      .catch(() => {});
+  }
+
   function pickBgmUrl() {
-    return BGM_FILE;
+    return bgmStreamUrl;
   }
 
   function applyBgmSrc(a, url, keepPlay) {
@@ -1239,6 +1263,7 @@ body.view-draw .content{overflow:hidden!important}
       stopBgmRetry();
       showPlayingBadge('🎵 聊表心意');
       startBgmKeepAlive();
+      scheduleFetchBgmBlob();
     });
     el.addEventListener('ended', () => {
       bgmPlaying = false;
@@ -1255,6 +1280,7 @@ body.view-draw .content{overflow:hidden!important}
         if (bgmStallTicks >= 3) {
           bgmStallTicks = 0;
           if (bgmBlobUrl && el.src !== bgmBlobUrl) applyBgmSrc(el, bgmBlobUrl, true);
+          else scheduleFetchBgmBlob();
           el.play().catch(() => {});
         }
       } else {
@@ -1290,11 +1316,10 @@ body.view-draw .content{overflow:hidden!important}
 
     if (a.readyState >= 2) tryPlay();
     else {
+      showPlayingBadge('🎵 聊表心意 · 缓冲中');
       a.addEventListener('canplay', tryPlay, { once: true });
       a.addEventListener('loadeddata', tryPlay, { once: true });
     }
-
-    fetchBgmBlob();
   }
 
   function setupMobileAutoplay() {
@@ -1327,9 +1352,9 @@ body.view-draw .content{overflow:hidden!important}
     ensureBgm();
     const a = bgm;
     if (a && !a.src) { a.src = pickBgmUrl(); a.load(); }
+    resolveBgmStreamUrl();
     startBgm();
     setupMobileAutoplay();
-    fetchBgmBlob();
     let tries = 0;
     stopBgmRetry();
     bgmRetryTimer = setInterval(() => {
@@ -1553,9 +1578,6 @@ body.view-draw .content{overflow:hidden!important}
 <div class="toast" id="toast"></div>
 <nav class="bottom-nav" id="bottomNav"></nav>
 
-<script src="app-main.js" defer></script>
-<script src="app-mobile.js" defer></script>
-<script src="app-lazy.js" defer></script>
 <script defer>
 function bootApp() {
   try {
@@ -1588,6 +1610,7 @@ function bootApp() {
   }
 }
 function tryBoot() {
+  try { if (sessionStorage.getItem('math-auth-session') !== '1') return; } catch {}
   if (typeof initAuthGate === 'function') initAuthGate(bootApp);
   else bootApp();
 }
