@@ -287,11 +287,6 @@ function renderTopbar() {
     h += `<button class="btn${view==='quizfavs'?' on':''}" id="btnQuizFavs">⭐ 收藏 (${quizFavs.length})</button>`;
     mh += `<button class="mact mact-text${view==='quizfavs'?' on':''}" id="m_btnQuizFavs">⭐ ${quizFavs.length}</button>`;
   }
-  if (isRef) {
-    h += `<button class="btn${showFav?' on':''}" id="btnFav">★ 收藏</button>`;
-    h += `<button class="btn" id="btnPrint">打印</button>`;
-    mh += `<button class="mact${showFav?' on':''}" id="m_btnFav">★</button>`;
-  }
   h += `<button class="btn${theme==='cute'?' on':''}" id="btnThemeCute" title="可爱模式">🎀</button>`;
   h += `<button class="btn${theme==='eye'?' on':''}" id="btnThemeEye" title="护眼模式">👁</button>`;
   h += `<button class="btn${theme==='dark'?' on':''}" id="btnThemeDark" title="夜间模式">🌙</button>`;

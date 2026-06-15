@@ -520,7 +520,7 @@
     setTimeout(() => {
       if (!bgmWantPlay || bgmBlobUrl || bgmFetchPromise) return;
       fetchBgmBlob();
-    }, 800);
+    }, 3500);
   }
 
   function resolveBgmStreamUrl() {
@@ -690,13 +690,13 @@
     const run = () => { try { cb?.(); } catch {} };
     let done = false;
     const once = () => { if (done) return; done = true; run(); };
-    setTimeout(once, 6000);
+    setTimeout(once, 10000);
     const tick = setInterval(() => {
-      if (bgm && bgmPlaying && bgm.currentTime > 2) {
+      if (bgm && bgmPlaying && bgm.currentTime > 4) {
         clearInterval(tick);
-        setTimeout(once, 400);
+        setTimeout(once, 800);
       }
-    }, 400);
+    }, 500);
   };
 
   function unlock(onDone) {
