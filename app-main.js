@@ -1778,6 +1778,15 @@ function render() {
   renderNav();
   renderTopbar();
   const c = $('#content');
+  const extViews = ['reports','custom','backup','timer','templates','more','refhub','feedback','weakness'];
+  if (extViews.includes(view) && typeof renderMore !== 'function') {
+    c.innerHTML = '<div class="content-inner"><p style="text-align:center;padding:48px 16px;color:var(--text2)">模块加载中，请稍候…</p></div>';
+    if (typeof loadHeavyModules === 'function') loadHeavyModules(() => render());
+    document.body.classList.toggle('view-draw', view === 'draw');
+    document.body.classList.toggle('view-photos', view === 'photos');
+    ensurePageClickable();
+    return;
+  }
   if (showFav) c.innerHTML = renderFavs();
   else if (view === 'home') c.innerHTML = renderHome();
   else if (view === 'section') c.innerHTML = renderSection(sectionId);

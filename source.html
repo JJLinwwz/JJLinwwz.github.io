@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.json">
 <title>婉宁老师教学小助手 🎀</title>
+<link rel="preload" href="app-main.js" as="script">
+<link rel="preload" href="app-mobile.js" as="script">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root,[data-theme="cute"]{
@@ -287,6 +289,7 @@ body.auth-pending .bottom-nav{display:none!important}
 .auth-heart-tap{cursor:pointer;border:none;padding:0;transition:transform .2s}
 .auth-heart-tap:active,.auth-heart-tap.heart-pop{transform:scale(1.35)}
 .auth-music-btn{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:10000;padding:10px 20px;border:none;border-radius:20px;background:rgba(255,255,255,.92);color:#c97a8e;font-size:.85rem;box-shadow:0 4px 16px rgba(232,120,154,.25);cursor:pointer;touch-action:manipulation}
+.auth-bgm-badge{position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:10001;padding:6px 14px;border-radius:16px;background:rgba(255,255,255,.9);color:#c97a8e;font-size:.78rem;box-shadow:0 2px 12px rgba(232,120,154,.2);pointer-events:none;animation:auth-heart-pulse 2s ease-in-out infinite}
 .auth-burst-big{font-size:1.35rem;animation:auth-burst-big 1.1s ease-out forwards}
 @keyframes auth-burst-big{0%{opacity:1;transform:translate(0,0) scale(.25)}100%{opacity:0;transform:translate(var(--bx,0),var(--by,-48px)) scale(1.65)}}
 .welcome-fw{position:fixed;pointer-events:none;z-index:9998;font-size:1.3rem;animation:welcome-fw 1.35s ease-out forwards}
@@ -678,7 +681,7 @@ body.view-draw .content{overflow:hidden!important}
     <p>叮咚～双向奔赴，欢迎来到我们的小世界✨</p>
   </div>
 </div>
-<audio id="authBgm" preload="metadata" playsinline style="display:none"></audio>
+<audio id="authBgm" preload="none" playsinline webkit-playsinline style="display:none"></audio>
 <script src="app-auth.js"></script>
 <div class="app">
   <aside class="sidebar">
@@ -714,7 +717,6 @@ body.view-draw .content{overflow:hidden!important}
 
 <script src="app-main.js" defer></script>
 <script src="app-mobile.js" defer></script>
-<script src="app-ext.js" defer></script>
 <script src="app-lazy.js" defer></script>
 <script defer>
 function bootApp() {
@@ -726,17 +728,14 @@ function bootApp() {
   }
   setTimeout(() => toast('欢迎回来，婉 ❤️ 这里始终为你亮着光 ✨', 2600), 600);
   render();
-  const loadLazy = () => {
+  setTimeout(() => {
     if (typeof loadHeavyModules === 'function') {
       loadHeavyModules(() => {
         if (typeof startGlobalPhotoListener === 'function') startGlobalPhotoListener();
+        if (typeof render === 'function') render();
       });
-    } else if (typeof startGlobalPhotoListener === 'function') {
-      setTimeout(startGlobalPhotoListener, 800);
     }
-  };
-  if (typeof requestIdleCallback === 'function') requestIdleCallback(loadLazy, { timeout: 2000 });
-  else setTimeout(loadLazy, 400);
+  }, 2500);
 }
 if (typeof initAuthGate === 'function') initAuthGate(bootApp);
 else bootApp();

@@ -9,6 +9,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
 <title>婉宁老师教学小助手 🎀</title>
+<link rel="preload" href="app-main.js" as="script">
+<link rel="preload" href="app-mobile.js" as="script">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root,[data-theme="cute"]{
@@ -288,6 +290,7 @@ body.auth-pending .bottom-nav{display:none!important}
 .auth-heart-tap{cursor:pointer;border:none;padding:0;transition:transform .2s}
 .auth-heart-tap:active,.auth-heart-tap.heart-pop{transform:scale(1.35)}
 .auth-music-btn{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:10000;padding:10px 20px;border:none;border-radius:20px;background:rgba(255,255,255,.92);color:#c97a8e;font-size:.85rem;box-shadow:0 4px 16px rgba(232,120,154,.25);cursor:pointer;touch-action:manipulation}
+.auth-bgm-badge{position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:10001;padding:6px 14px;border-radius:16px;background:rgba(255,255,255,.9);color:#c97a8e;font-size:.78rem;box-shadow:0 2px 12px rgba(232,120,154,.2);pointer-events:none;animation:auth-heart-pulse 2s ease-in-out infinite}
 .auth-burst-big{font-size:1.35rem;animation:auth-burst-big 1.1s ease-out forwards}
 @keyframes auth-burst-big{0%{opacity:1;transform:translate(0,0) scale(.25)}100%{opacity:0;transform:translate(var(--bx,0),var(--by,-48px)) scale(1.65)}}
 .welcome-fw{position:fixed;pointer-events:none;z-index:9998;font-size:1.3rem;animation:welcome-fw 1.35s ease-out forwards}
@@ -679,10 +682,10 @@ body.view-draw .content{overflow:hidden!important}
     <p>叮咚～双向奔赴，欢迎来到我们的小世界✨</p>
   </div>
 </div>
-<audio id="authBgm" preload="metadata" playsinline style="display:none"></audio>
+<audio id="authBgm" preload="none" playsinline webkit-playsinline style="display:none"></audio>
 <script>
 /* === app-auth.js (early) === */
-// 登录门禁 · 轻量优先加载（微信/QQ 内置浏览器里大包 JS 解析完之前也能点）
+// 登录门禁 · 轻量优先加载 + 聊表心意 BGM
 (function () {
   const PASS_L1 = ['060303', '060126'];
   const PASS_L2 = '123';
@@ -691,7 +694,7 @@ body.view-draw .content{overflow:hidden!important}
   const BGM_FILE = 'liaobiaoxinyi.mp3';
 
   let bgm = null;
-  let bgmTried = false;
+  let bgmReady = false;
 
   function ssGet(k) {
     try { return sessionStorage.getItem(k); } catch { return null; }
@@ -705,7 +708,7 @@ body.view-draw .content{overflow:hidden!important}
   function tap(el, fn) {
     if (!el || el._authTap) return;
     el._authTap = true;
-    const wrap = e => { tryPlayBgm(); fn(e); };
+    const wrap = e => { startBgm(); fn(e); };
     el.addEventListener('click', wrap);
     el.addEventListener('touchend', e => { e.preventDefault(); wrap(e); }, { passive: false });
   }
@@ -717,33 +720,62 @@ body.view-draw .content{overflow:hidden!important}
     if (danger !== undefined) el.style.color = danger ? 'var(--danger, #c47a7a)' : '';
   }
 
+  function showPlayingBadge() {
+    let badge = document.getElementById('authBgmBadge');
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.id = 'authBgmBadge';
+      badge.className = 'auth-bgm-badge';
+      badge.textContent = '🎵 聊表心意';
+      document.body.appendChild(badge);
+    }
+    badge.style.display = 'block';
+  }
+
+  function hidePlayingBadge() {
+    const badge = document.getElementById('authBgmBadge');
+    if (badge) badge.style.display = 'none';
+  }
+
   function ensureBgm() {
     if (bgm) return bgm;
-    const el = document.getElementById('authBgm');
-    if (!el) return null;
-    el.src = BGM_FILE;
+    let el = document.getElementById('authBgm');
+    if (!el) {
+      el = document.createElement('audio');
+      el.id = 'authBgm';
+      el.style.display = 'none';
+      document.body.appendChild(el);
+    }
     el.loop = false;
+    el.setAttribute('playsinline', '');
+    el.setAttribute('webkit-playsinline', '');
+    el.preload = 'auto';
+    if (!el.src || !el.src.includes(BGM_FILE)) el.src = BGM_FILE;
     bgm = el;
-    el.addEventListener('error', () => {
-      document.getElementById('authMusicBtn')?.remove();
-    });
+    el.addEventListener('playing', showPlayingBadge);
     el.addEventListener('ended', () => {
-      try { el.pause(); el.currentTime = 0; } catch {}
+      hidePlayingBadge();
       document.getElementById('authMusicBtn')?.remove();
     });
+    el.addEventListener('error', () => {
+      hidePlayingBadge();
+      showMusicBtn('🎵 音乐加载失败，点我重试');
+    });
+    el.addEventListener('canplaythrough', () => { bgmReady = true; }, { once: true });
     return bgm;
   }
 
-  function tryPlayBgm() {
+  function startBgm() {
     if (isAuthed() && window._authEarlyDone) return;
     const a = ensureBgm();
-    if (!a || (!a.paused && a.currentTime > 0)) return;
+    if (!a.paused && a.currentTime > 0 && !a.ended) return;
     a.play().then(() => {
+      showPlayingBadge();
       document.getElementById('authMusicBtn')?.remove();
-    }).catch(() => showMusicBtn());
+    }).catch(() => showMusicBtn('🎵 点一下播放 · 聊表心意'));
   }
 
-  function showMusicBtn() {
+  function showMusicBtn(label) {
     if (document.getElementById('authMusicBtn')) return;
     const gate = document.getElementById('authGate') || document.getElementById('authGate2');
     if (!gate) return;
@@ -751,18 +783,22 @@ body.view-draw .content{overflow:hidden!important}
     btn.id = 'authMusicBtn';
     btn.type = 'button';
     btn.className = 'auth-music-btn';
-    btn.textContent = '🎵 聊表心意';
-    const onTap = e => {
-      e.preventDefault();
-      const au = ensureBgm();
-      if (!au) return;
-      au.play().catch(() => {
-        btn.textContent = '🎵 请先放入 liaobiaoxinyi.mp3';
-      });
-    };
+    btn.textContent = label || '🎵 聊表心意';
+    const onTap = e => { e.preventDefault(); e.stopPropagation(); startBgm(); };
     btn.addEventListener('click', onTap);
     btn.addEventListener('touchend', onTap, { passive: false });
     gate.appendChild(btn);
+  }
+
+  function bindBgmGestures() {
+    const onceStart = () => startBgm();
+    document.addEventListener('touchstart', onceStart, { once: true, passive: true });
+    document.addEventListener('click', onceStart, { once: true });
+  }
+
+  function scheduleBgm() {
+    bindBgmGestures();
+    setTimeout(startBgm, 800);
   }
 
   function unlock(onDone) {
@@ -807,7 +843,7 @@ body.view-draw .content{overflow:hidden!important}
       if (gate) gate.style.display = 'none';
       gate2.style.display = 'flex';
       gate2.classList.remove('auth-out');
-      tryPlayBgm();
+      startBgm();
       document.getElementById('authPwd2')?.focus();
     }, 300);
   }
@@ -888,15 +924,7 @@ body.view-draw .content{overflow:hidden!important}
     }
 
     window._authEarlyBound = true;
-    ensureBgm();
-    setTimeout(tryPlayBgm, 300);
-
-    setTimeout(() => {
-      if (!window._bootAppCalled && (document.getElementById('authGate') || document.getElementById('authGate2'))) {
-        const msgEl = document.getElementById('authMsg') || document.getElementById('authMsg2');
-        if (msgEl && !msgEl.textContent) showMsg(msgEl.id, '可先输入口令，后台正在加载…');
-      }
-    }, 1200);
+    scheduleBgm();
   }
 
   bootEarlyAuth();
@@ -949,7 +977,6 @@ body.view-draw .content{overflow:hidden!important}
 
 <script src="app-main.js" defer></script>
 <script src="app-mobile.js" defer></script>
-<script src="app-ext.js" defer></script>
 <script src="app-lazy.js" defer></script>
 <script defer>
 function bootApp() {
@@ -961,17 +988,14 @@ function bootApp() {
   }
   setTimeout(() => toast('欢迎回来，婉 ❤️ 这里始终为你亮着光 ✨', 2600), 600);
   render();
-  const loadLazy = () => {
+  setTimeout(() => {
     if (typeof loadHeavyModules === 'function') {
       loadHeavyModules(() => {
         if (typeof startGlobalPhotoListener === 'function') startGlobalPhotoListener();
+        if (typeof render === 'function') render();
       });
-    } else if (typeof startGlobalPhotoListener === 'function') {
-      setTimeout(startGlobalPhotoListener, 800);
     }
-  };
-  if (typeof requestIdleCallback === 'function') requestIdleCallback(loadLazy, { timeout: 2000 });
-  else setTimeout(loadLazy, 400);
+  }, 2500);
 }
 if (typeof initAuthGate === 'function') initAuthGate(bootApp);
 else bootApp();

@@ -1,4 +1,4 @@
-// 登录门禁 · 轻量优先加载（微信/QQ 内置浏览器里大包 JS 解析完之前也能点）
+// 登录门禁 · 轻量优先加载 + 聊表心意 BGM
 (function () {
   const PASS_L1 = ['060303', '060126'];
   const PASS_L2 = '123';
@@ -7,7 +7,7 @@
   const BGM_FILE = 'liaobiaoxinyi.mp3';
 
   let bgm = null;
-  let bgmTried = false;
+  let bgmReady = false;
 
   function ssGet(k) {
     try { return sessionStorage.getItem(k); } catch { return null; }
@@ -21,7 +21,7 @@
   function tap(el, fn) {
     if (!el || el._authTap) return;
     el._authTap = true;
-    const wrap = e => { tryPlayBgm(); fn(e); };
+    const wrap = e => { startBgm(); fn(e); };
     el.addEventListener('click', wrap);
     el.addEventListener('touchend', e => { e.preventDefault(); wrap(e); }, { passive: false });
   }
@@ -33,33 +33,62 @@
     if (danger !== undefined) el.style.color = danger ? 'var(--danger, #c47a7a)' : '';
   }
 
+  function showPlayingBadge() {
+    let badge = document.getElementById('authBgmBadge');
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.id = 'authBgmBadge';
+      badge.className = 'auth-bgm-badge';
+      badge.textContent = '🎵 聊表心意';
+      document.body.appendChild(badge);
+    }
+    badge.style.display = 'block';
+  }
+
+  function hidePlayingBadge() {
+    const badge = document.getElementById('authBgmBadge');
+    if (badge) badge.style.display = 'none';
+  }
+
   function ensureBgm() {
     if (bgm) return bgm;
-    const el = document.getElementById('authBgm');
-    if (!el) return null;
-    el.src = BGM_FILE;
+    let el = document.getElementById('authBgm');
+    if (!el) {
+      el = document.createElement('audio');
+      el.id = 'authBgm';
+      el.style.display = 'none';
+      document.body.appendChild(el);
+    }
     el.loop = false;
+    el.setAttribute('playsinline', '');
+    el.setAttribute('webkit-playsinline', '');
+    el.preload = 'auto';
+    if (!el.src || !el.src.includes(BGM_FILE)) el.src = BGM_FILE;
     bgm = el;
-    el.addEventListener('error', () => {
-      document.getElementById('authMusicBtn')?.remove();
-    });
+    el.addEventListener('playing', showPlayingBadge);
     el.addEventListener('ended', () => {
-      try { el.pause(); el.currentTime = 0; } catch {}
+      hidePlayingBadge();
       document.getElementById('authMusicBtn')?.remove();
     });
+    el.addEventListener('error', () => {
+      hidePlayingBadge();
+      showMusicBtn('🎵 音乐加载失败，点我重试');
+    });
+    el.addEventListener('canplaythrough', () => { bgmReady = true; }, { once: true });
     return bgm;
   }
 
-  function tryPlayBgm() {
+  function startBgm() {
     if (isAuthed() && window._authEarlyDone) return;
     const a = ensureBgm();
-    if (!a || (!a.paused && a.currentTime > 0)) return;
+    if (!a.paused && a.currentTime > 0 && !a.ended) return;
     a.play().then(() => {
+      showPlayingBadge();
       document.getElementById('authMusicBtn')?.remove();
-    }).catch(() => showMusicBtn());
+    }).catch(() => showMusicBtn('🎵 点一下播放 · 聊表心意'));
   }
 
-  function showMusicBtn() {
+  function showMusicBtn(label) {
     if (document.getElementById('authMusicBtn')) return;
     const gate = document.getElementById('authGate') || document.getElementById('authGate2');
     if (!gate) return;
@@ -67,18 +96,22 @@
     btn.id = 'authMusicBtn';
     btn.type = 'button';
     btn.className = 'auth-music-btn';
-    btn.textContent = '🎵 聊表心意';
-    const onTap = e => {
-      e.preventDefault();
-      const au = ensureBgm();
-      if (!au) return;
-      au.play().catch(() => {
-        btn.textContent = '🎵 请先放入 liaobiaoxinyi.mp3';
-      });
-    };
+    btn.textContent = label || '🎵 聊表心意';
+    const onTap = e => { e.preventDefault(); e.stopPropagation(); startBgm(); };
     btn.addEventListener('click', onTap);
     btn.addEventListener('touchend', onTap, { passive: false });
     gate.appendChild(btn);
+  }
+
+  function bindBgmGestures() {
+    const onceStart = () => startBgm();
+    document.addEventListener('touchstart', onceStart, { once: true, passive: true });
+    document.addEventListener('click', onceStart, { once: true });
+  }
+
+  function scheduleBgm() {
+    bindBgmGestures();
+    setTimeout(startBgm, 800);
   }
 
   function unlock(onDone) {
@@ -123,7 +156,7 @@
       if (gate) gate.style.display = 'none';
       gate2.style.display = 'flex';
       gate2.classList.remove('auth-out');
-      tryPlayBgm();
+      startBgm();
       document.getElementById('authPwd2')?.focus();
     }, 300);
   }
@@ -204,15 +237,7 @@
     }
 
     window._authEarlyBound = true;
-    ensureBgm();
-    setTimeout(tryPlayBgm, 300);
-
-    setTimeout(() => {
-      if (!window._bootAppCalled && (document.getElementById('authGate') || document.getElementById('authGate2'))) {
-        const msgEl = document.getElementById('authMsg') || document.getElementById('authMsg2');
-        if (msgEl && !msgEl.textContent) showMsg(msgEl.id, '可先输入口令，后台正在加载…');
-      }
-    }, 1200);
+    scheduleBgm();
   }
 
   bootEarlyAuth();

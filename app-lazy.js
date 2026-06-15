@@ -1,12 +1,9 @@
-// 登录后再加载的重模块（题库 / 公式 / 导出 / 云端同步）
+// 登录后再加载的重模块（并行加载，不阻塞首屏）
 (function () {
-  const LAZY_SCRIPTS = [
-    'gaokao-bank.js',
-    'lib/katex.min.js',
-    'lib/html2canvas.min.js',
-    'sync-config.js',
-    'app-sync.js',
-    'app-chat.js',
+  const LAZY_GROUPS = [
+    ['app-ext.js', 'sync-config.js', 'gaokao-bank.js'],
+    ['app-sync.js', 'app-chat.js'],
+    ['lib/katex.min.js', 'lib/html2canvas.min.js'],
   ];
   let loading = false;
   let loaded = false;
@@ -14,13 +11,19 @@
 
   function loadOne(src) {
     return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[data-lazy="${src}"]`)) { resolve(); return; }
       const s = document.createElement('script');
       s.src = src;
-      s.async = false;
+      s.dataset.lazy = src;
+      s.async = true;
       s.onload = () => resolve();
       s.onerror = () => reject(new Error(src));
       document.head.appendChild(s);
     });
+  }
+
+  function loadGroup(list) {
+    return Promise.all(list.map(loadOne));
   }
 
   function loadKatexCss() {
@@ -30,7 +33,8 @@
       link.id = 'katex-css-link';
       link.rel = 'stylesheet';
       link.href = 'lib/katex.min.css';
-      link.onload = () => resolve();
+      link.media = 'print';
+      link.onload = () => { link.media = 'all'; resolve(); };
       link.onerror = () => resolve();
       document.head.appendChild(link);
     });
@@ -38,9 +42,10 @@
 
   function loadSupabase() {
     if (window.supabase) return Promise.resolve();
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       const s = document.createElement('script');
       s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+      s.async = true;
       s.onload = () => resolve();
       s.onerror = () => resolve();
       document.head.appendChild(s);
@@ -54,9 +59,8 @@
     loading = true;
     return (async () => {
       try {
-        await loadKatexCss();
-        for (const src of LAZY_SCRIPTS) await loadOne(src);
-        await loadSupabase();
+        for (const group of LAZY_GROUPS) await loadGroup(group);
+        await Promise.all([loadKatexCss(), loadSupabase()]);
         loaded = true;
         window._heavyModulesReady = true;
       } catch (e) {
@@ -64,8 +68,7 @@
         window._heavyModulesReady = true;
       }
       loading = false;
-      const cbs = queue.splice(0);
-      cbs.forEach(fn => { try { fn(); } catch {} });
+      queue.splice(0).forEach(fn => { try { fn(); } catch {} });
     })();
   };
 
