@@ -84,10 +84,33 @@
 
   function runBootApp() {
     ensureAppReady(() => {
-      if (window._bootAppFn && !window._bootAppCalled) {
-        window._bootAppCalled = true;
-        window._bootAppFn();
+      if (!window._bootAppFn) return;
+      if (window._bootAppCalled) {
+        try { window._bootAppFn(); } catch (e) { console.error('bootApp retry', e); }
+        return;
       }
+      window._bootAppCalled = true;
+      try { window._bootAppFn(); } catch (e) { console.error('bootApp', e); window._bootAppCalled = false; }
+    });
+  }
+
+  function isContentEmpty() {
+    const c = document.getElementById('content');
+    if (!c) return true;
+    return !c.querySelector('.home-quick .quick-btn[data-go], .section-title, .draw-page, .quiz-item');
+  }
+
+  function scheduleBootRetry() {
+    if (!isAuthed() && !window._authEarlyDone) return;
+    [300, 800, 1500, 3000, 5000, 8000].forEach(ms => {
+      setTimeout(() => {
+        if (!isContentEmpty()) return;
+        if (typeof render === 'function') {
+          try { render(); } catch {}
+        } else {
+          runBootApp();
+        }
+      }, ms);
     });
   }
 
@@ -503,16 +526,30 @@
     }
   }
 
-  function setupWeixinAutoplay() {
-    const run = () => {
-      try {
-        window.WeixinJSBridge.invoke('getNetworkType', {}, () => startBgm(), false);
-      } catch {
-        startBgm();
+  function setupMobileAutoplay() {
+    const run = () => startBgm();
+    try {
+      if (typeof window.WeixinJSBridge === 'object') {
+        window.WeixinJSBridge.invoke('getNetworkType', {}, run, false);
       }
-    };
-    if (typeof window.WeixinJSBridge === 'object') run();
-    else document.addEventListener('WeixinJSBridgeReady', run, false);
+    } catch {}
+    document.addEventListener('WeixinJSBridgeReady', () => {
+      try { window.WeixinJSBridge.invoke('getNetworkType', {}, run, false); } catch { run(); }
+    }, false);
+    try {
+      if (window.mqq && typeof window.mqq.invoke === 'function') {
+        window.mqq.invoke('device', 'getNetworkType', {}, run);
+      }
+    } catch {}
+    try {
+      if (window.QQJSBridge && typeof window.QQJSBridge.invoke === 'function') {
+        window.QQJSBridge.invoke('getNetworkType', {}, run);
+      }
+    } catch {}
+  }
+
+  function setupWeixinAutoplay() {
+    setupMobileAutoplay();
   }
 
   function scheduleBgm() {
@@ -547,6 +584,7 @@
       window._authEarlyDone = true;
       onDone?.();
       runBootApp();
+      scheduleBootRetry();
     }, 380);
   }
 
@@ -661,11 +699,19 @@
 
   bootEarlyAuth();
 
+  window.addEventListener('load', () => {
+    if (isAuthed() || window._authEarlyDone) {
+      runBootApp();
+      scheduleBootRetry();
+    }
+  });
+
   window.initAuthGate = function (onUnlock) {
     window._bootAppFn = onUnlock;
     bindAuthUiEffects();
     if (isAuthed() || window._authEarlyDone) {
-      if (!window._bootAppCalled) runBootApp();
+      runBootApp();
+      scheduleBootRetry();
       return;
     }
     if (!window._authEarlyBound) bootEarlyAuth();

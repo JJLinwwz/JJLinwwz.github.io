@@ -719,7 +719,18 @@ body.view-draw .content{overflow:hidden!important}
       </div>
       <div class="topbar-actions" id="topbarActions"></div>
     </header>
-    <main class="content" id="content"></main>
+    <main class="content" id="content">
+      <div class="content-inner" id="contentFallback">
+        <div class="home-hero" style="padding:20px 18px">
+          <h2 style="color:var(--accent);font-size:1.1rem;margin-bottom:6px">婉宁老师的专属小天地 ✨</h2>
+          <p style="font-size:.84rem;color:var(--text2)">工作台加载中，请稍候…</p>
+        </div>
+        <div class="home-quick" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px">
+          <div class="quick-btn" style="padding:14px;text-align:center;border:1px solid var(--border);border-radius:14px" onclick="location.reload()"><div style="font-size:1.3rem">🔄</div><div style="font-size:.82rem;margin-top:4px">刷新页面</div></div>
+          <div class="quick-btn" style="padding:14px;text-align:center;border:1px solid var(--border);border-radius:14px" onclick="if(typeof render==='function')render()"><div style="font-size:1.3rem">🏠</div><div style="font-size:.82rem;margin-top:4px">重新加载</div></div>
+        </div>
+      </div>
+    </main>
   </div>
 </div>
 
@@ -749,6 +760,7 @@ function bootApp() {
     doRender();
     requestAnimationFrame(doRender);
     setTimeout(doRender, 120);
+    [400, 1000, 2500].forEach(t => setTimeout(doRender, t));
     setTimeout(() => { if (typeof toast === 'function') toast('欢迎回来，婉 ❤️ 这里始终为你亮着光 ✨', 2600); }, 600);
     setTimeout(() => {
       if (typeof loadHeavyModules === 'function') {
