@@ -1689,6 +1689,7 @@ function navigateTo(nextView, opts) {
   view = nextView;
   const content = document.getElementById('content');
   if (content) content.scrollTop = 0;
+  ensurePageClickable();
   render();
 }
 
@@ -1708,9 +1709,10 @@ function navigateGo(el) {
 }
 
 function ensurePageClickable() {
-  if (view !== 'draw' && view !== 'photos') {
-    document.querySelectorAll('.sync-mobile-sheet, .sync-role-overlay, .photo-lightbox').forEach(el => el.remove());
-  }
+  document.querySelectorAll('.sync-mobile-sheet, .sync-role-overlay, .photo-lightbox').forEach(el => {
+    if (el.classList.contains('photo-lightbox') && el.classList.contains('show') && view === 'photos') return;
+    el.remove();
+  });
   document.body.style.pointerEvents = '';
   document.documentElement.style.pointerEvents = '';
   const app = document.querySelector('.app');
@@ -1819,7 +1821,7 @@ function render() {
   document.body.classList.toggle('view-photos', view === 'photos');
 
   if (typeof initExtView === 'function') initExtView();
-  if (typeof initCoupleView === 'function') initCoupleView(view);
+  if (typeof initCoupleView === 'function' && ['home','wishes','hundred','growth'].includes(view)) initCoupleView(view);
   if (view === 'home' || view === 'more') {
     setTimeout(() => {
       if (typeof window.syncRefreshHomePresence === 'function') window.syncRefreshHomePresence();

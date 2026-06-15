@@ -20,6 +20,87 @@
   let wishTab = 'travel';
   let hundredFilter = 'all';
   let coupleBound = { wishes: false, hundred: false, growth: false, home: false };
+  let coupleDataPromise = null;
+  let coupleRealtimeBound = false;
+  let coupleRenderLock = false;
+
+  function safeCoupleRender() {
+    if (coupleRenderLock || typeof render !== 'function') return;
+    coupleRenderLock = true;
+    requestAnimationFrame(() => {
+      coupleRenderLock = false;
+      try { render(); } catch (e) { console.error('couple render', e); }
+    });
+  }
+
+  function paintWishesPage() {
+    if (typeof view === 'undefined' || view !== 'wishes') return;
+    const list = document.getElementById('wishList');
+    if (list) list.innerHTML = wishListHtml(wishTab);
+    document.querySelectorAll('[data-wish-tab]').forEach(btn => {
+      btn.classList.toggle('on', btn.dataset.wishTab === wishTab);
+    });
+    const st = window.getCoupleHomeStats();
+    const page = document.querySelector('.couple-page');
+    const fill = page?.querySelector('.couple-progress-fill');
+    const txt = page?.querySelector('.couple-progress-text');
+    if (fill) fill.style.width = `${st.wishTotal ? Math.round(st.wishDone / st.wishTotal * 100) : 0}%`;
+    if (txt) txt.textContent = `已完成 ${st.wishDone} / ${st.wishTotal} 个心愿`;
+  }
+
+  function paintHundredPage() {
+    if (typeof view === 'undefined' || view !== 'hundred') return;
+    const list = document.getElementById('hundredList');
+    if (list) list.innerHTML = hundredListHtml();
+    document.querySelectorAll('[data-hundred-filter]').forEach(btn => {
+      btn.classList.toggle('on', btn.dataset.hundredFilter === hundredFilter);
+    });
+    const st = window.getCoupleHomeStats();
+    const page = document.querySelector('.couple-page');
+    const fill = page?.querySelector('.couple-progress-fill');
+    const txt = page?.querySelector('.couple-progress-text');
+    if (fill) fill.style.width = `${st.hundredPct}%`;
+    if (txt) txt.textContent = `已完成 ${st.hundredDone} / ${st.hundredTotal} 件 · ${st.hundredPct}%`;
+  }
+
+  function paintGrowthPage() {
+    if (typeof view === 'undefined' || view !== 'growth') return;
+    const list = document.getElementById('growthList');
+    if (list) list.innerHTML = growthListHtml();
+  }
+
+  function paintCoupleView() {
+    if (view === 'wishes') paintWishesPage();
+    else if (view === 'hundred') paintHundredPage();
+    else if (view === 'growth') paintGrowthPage();
+  }
+
+  function subscribeCoupleRealtime() {
+    const client = sb();
+    if (!client || coupleRealtimeBound || !cfgOk()) return;
+    coupleRealtimeBound = true;
+    const rid = roomId();
+    const ch = client.channel('couple-' + rid);
+    const refresh = () => {
+      Promise.all([loadWishes(), loadHundred(), loadGrowth(), loadCheckins()]).then(() => {
+        paintCoupleView();
+        if (view === 'home' && typeof render === 'function') safeCoupleRender();
+      });
+    };
+    ['room_wishes', 'room_hundred', 'room_growth', 'room_checkins'].forEach(table => {
+      ch.on('postgres_changes', { event: '*', schema: 'public', table, filter: `room_id=eq.${rid}` }, refresh);
+    });
+    ch.subscribe();
+  }
+
+  function ensureCoupleData() {
+    if (coupleDataPromise) return coupleDataPromise;
+    coupleDataPromise = ensureHub()
+      .then(() => Promise.all([loadWishes(), loadHundred(), loadGrowth(), loadCheckins()]))
+      .then(() => { subscribeCoupleRealtime(); paintCoupleView(); })
+      .catch(err => { console.warn('couple data', err); coupleDataPromise = null; });
+    return coupleDataPromise;
+  }
 
   function cfgOk() { return typeof window.syncIsEnabled === 'function' && window.syncIsEnabled(); }
   function roomId() { return (window.SYNC_CONFIG || {}).roomId || 'wanning-xiaowu'; }
@@ -114,9 +195,8 @@
     }
   }
 
-  window.preloadCoupleData = async function () {
-    await ensureHub();
-    await Promise.all([loadWishes(), loadHundred(), loadGrowth(), loadCheckins()]);
+  window.preloadCoupleData = function () {
+    return ensureCoupleData();
   };
 
   window.getCoupleHomeStats = function () {
@@ -161,9 +241,11 @@
   window.renderWishes = function () {
     const cat = WISH_CATS.find(c => c.id === wishTab) || WISH_CATS[0];
     const st = window.getCoupleHomeStats();
+    const cloudTip = !cfgOk() ? `<p class="couple-empty" style="margin-bottom:10px">☁️ 请先在「涂鸦小窝」点连接云端并选好人设，双方才能同步看见</p>` : '';
     return `<div class="content-inner couple-page">
       <h2 class="section-title">共同心愿清单 🌟</h2>
       <p class="section-desc">打卡想去的地方、想吃的美食、想完成的小事</p>
+      ${cloudTip}
       <div class="couple-progress-bar"><div class="couple-progress-fill" style="width:${st.wishTotal ? Math.round(st.wishDone / st.wishTotal * 100) : 0}%"></div></div>
       <p class="couple-progress-text">已完成 ${st.wishDone} / ${st.wishTotal} 个心愿</p>
       <div class="couple-tabs">${WISH_CATS.map(c => `<button type="button" class="couple-tab${wishTab === c.id ? ' on' : ''}" data-wish-tab="${c.id}">${c.icon} ${c.label}</button>`).join('')}</div>
@@ -185,7 +267,7 @@
     try { localStorage.setItem('couple-wishes', JSON.stringify(wishes.slice(0, 200))); } catch {}
     const inp = document.getElementById('wishInput');
     if (inp) inp.value = '';
-    if (typeof render === 'function' && typeof view !== 'undefined' && view === 'wishes') render();
+    if (typeof render === 'function' && typeof view !== 'undefined' && view === 'wishes') paintWishesPage();
   }
 
   async function toggleWish(id, done) {
@@ -196,7 +278,7 @@
     await client.from('room_wishes').update(patch).eq('id', id);
     Object.assign(w, patch);
     try { localStorage.setItem('couple-wishes', JSON.stringify(wishes)); } catch {}
-    if (typeof render === 'function' && view === 'wishes') render();
+    if (typeof render === 'function') paintWishesPage();
   }
 
   async function deleteWish(id) {
@@ -205,7 +287,7 @@
     if (client) await client.from('room_wishes').delete().eq('id', id);
     wishes = wishes.filter(w => w.id !== id);
     try { localStorage.setItem('couple-wishes', JSON.stringify(wishes)); } catch {}
-    if (typeof render === 'function') render();
+    if (typeof render === 'function') paintWishesPage();
   }
 
   function openWishEdit(id) {
@@ -231,7 +313,7 @@
       if (client) await client.from('room_wishes').update(patch).eq('id', id);
       Object.assign(w, patch);
       closeModal();
-      render();
+      paintWishesPage();
       toast('已保存');
     };
   }
@@ -241,7 +323,7 @@
       coupleBound.wishes = true;
       document.addEventListener('click', e => {
         const tab = e.target.closest('[data-wish-tab]');
-        if (tab) { wishTab = tab.dataset.wishTab; render(); return; }
+        if (tab) { wishTab = tab.dataset.wishTab; paintWishesPage(); return; }
         const add = e.target.closest('#wishAddBtn');
         if (add) {
           const v = document.getElementById('wishInput')?.value?.trim();
@@ -260,7 +342,7 @@
         if (e.target.id === 'wishInput') { e.preventDefault(); addWish(e.target.value.trim(), wishTab); }
       });
     }
-    ensureHub().then(loadWishes).then(() => { if (view === 'wishes') render(); });
+    ensureCoupleData();
   };
 
   // ── 一百件小事 ──
@@ -316,7 +398,7 @@
     try { localStorage.setItem('couple-hundred', JSON.stringify(hundred)); } catch {}
     const inp = document.getElementById('hundredInput');
     if (inp) inp.value = '';
-    render();
+    paintHundredPage();
   }
 
   async function importHundredPresets() {
@@ -332,7 +414,7 @@
     }
     try { localStorage.setItem('couple-hundred', JSON.stringify(hundred)); } catch {}
     toast(`已导入 ${toAdd.length} 条预设`);
-    render();
+    paintHundredPage();
   }
 
   async function toggleHundred(id, done) {
@@ -343,7 +425,7 @@
     await client.from('room_hundred').update(patch).eq('id', id);
     Object.assign(h, patch);
     try { localStorage.setItem('couple-hundred', JSON.stringify(hundred)); } catch {}
-    render();
+    paintHundredPage();
   }
 
   async function deleteHundred(id) {
@@ -352,7 +434,7 @@
     if (client) await client.from('room_hundred').delete().eq('id', id);
     hundred = hundred.filter(h => h.id !== id);
     try { localStorage.setItem('couple-hundred', JSON.stringify(hundred)); } catch {}
-    render();
+    paintHundredPage();
   }
 
   function openHundredEdit(id) {
@@ -375,7 +457,7 @@
       const patch = { title: document.getElementById('heTitle').value.trim(), note: document.getElementById('heNote').value.trim(), photo };
       if (client) await client.from('room_hundred').update(patch).eq('id', id);
       Object.assign(h, patch);
-      closeModal(); render(); toast('已保存');
+      closeModal(); paintHundredPage(); toast('已保存');
     };
   }
 
@@ -384,7 +466,7 @@
       coupleBound.hundred = true;
       document.addEventListener('click', e => {
         const f = e.target.closest('[data-hundred-filter]');
-        if (f) { hundredFilter = f.dataset.hundredFilter; render(); return; }
+        if (f) { hundredFilter = f.dataset.hundredFilter; paintHundredPage(); return; }
         if (e.target.closest('#hundredAddBtn')) {
           const v = document.getElementById('hundredInput')?.value?.trim();
           if (v) addHundred(v);
@@ -399,7 +481,7 @@
         if (del) { deleteHundred(del.dataset.delHundred); return; }
       });
     }
-    ensureHub().then(loadHundred).then(() => { if (view === 'hundred') render(); });
+    ensureCoupleData();
   };
 
   // ── 成长记录簿 ──
@@ -439,7 +521,7 @@
     if (error) { toast('发布失败'); return; }
     growth.unshift(data);
     try { localStorage.setItem('couple-growth', JSON.stringify(growth.slice(0, 50))); } catch {}
-    render();
+    paintGrowthPage();
     toast('已发布 ✨');
   }
 
@@ -452,7 +534,7 @@
     await client.from('room_growth').update({ replies }).eq('id', id);
     g.replies = replies;
     try { localStorage.setItem('couple-growth', JSON.stringify(growth)); } catch {}
-    render();
+    paintGrowthPage();
   }
 
   async function deleteGrowth(id) {
@@ -460,7 +542,7 @@
     const client = sb();
     if (client) await client.from('room_growth').delete().eq('id', id);
     growth = growth.filter(g => g.id !== id);
-    render();
+    paintGrowthPage();
   }
 
   window.initGrowth = function () {
@@ -482,7 +564,7 @@
         if (del) deleteGrowth(del.dataset.delGrowth);
       });
     }
-    ensureHub().then(loadGrowth).then(() => { if (view === 'growth') render(); });
+    ensureCoupleData();
   };
 
   // ── 首页签到 ──
@@ -497,19 +579,17 @@
     checkins.unshift(data);
     try { localStorage.setItem('couple-checkins', JSON.stringify(checkins)); } catch {}
     toast('签到成功 💕');
-    if (typeof render === 'function' && view === 'home') render();
+    if (typeof render === 'function' && view === 'home') safeCoupleRender();
   }
 
   window.initCoupleHome = function () {
-    if (coupleBound.home) return;
+    if (coupleBound.home) { ensureCoupleData(); return; }
     coupleBound.home = true;
     document.addEventListener('click', e => {
       const btn = e.target.closest('[data-checkin-mood]');
       if (btn) doCheckin(btn.dataset.checkinMood, document.getElementById('checkinNote')?.value);
     });
-    ensureHub().then(() => Promise.all([loadWishes(), loadHundred(), loadCheckins()])).then(() => {
-      if (view === 'home' && typeof render === 'function') render();
-    });
+    ensureCoupleData();
   };
 
   window.initCoupleView = function (v) {

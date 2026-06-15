@@ -2147,7 +2147,7 @@
   function forceUnlockUI() {
     cancelRolePicker();
     stopPresenceFastPoll();
-    document.querySelectorAll('.sync-mobile-sheet, .photo-lightbox').forEach(el => el.remove());
+    document.querySelectorAll('.sync-mobile-sheet, .sync-role-overlay, .photo-lightbox').forEach(el => el.remove());
     const modal = document.getElementById('modal');
     if (modal) modal.classList.remove('show');
     document.body.classList.remove('view-draw', 'view-photos', 'bnav-auto-hidden', 'timer-landscape');
