@@ -9,5 +9,5 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-echo 完成！请把 index.html 上传 Netlify，或本地双击打开。
+echo 完成！轻量 index.html 已生成，请把整个文件夹 push 到 GitHub。
 pause

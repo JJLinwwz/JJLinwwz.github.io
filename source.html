@@ -8,7 +8,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.json">
 <title>婉宁老师教学小助手 🎀</title>
-<link rel="stylesheet" href="lib/katex.min.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root,[data-theme="cute"]{
@@ -287,6 +286,7 @@ body.auth-pending .bottom-nav{display:none!important}
 .auth-heart-float-btn:active{transform:scale(1.15)}
 .auth-heart-tap{cursor:pointer;border:none;padding:0;transition:transform .2s}
 .auth-heart-tap:active,.auth-heart-tap.heart-pop{transform:scale(1.35)}
+.auth-music-btn{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:10000;padding:10px 20px;border:none;border-radius:20px;background:rgba(255,255,255,.92);color:#c97a8e;font-size:.85rem;box-shadow:0 4px 16px rgba(232,120,154,.25);cursor:pointer;touch-action:manipulation}
 .auth-burst-big{font-size:1.35rem;animation:auth-burst-big 1.1s ease-out forwards}
 @keyframes auth-burst-big{0%{opacity:1;transform:translate(0,0) scale(.25)}100%{opacity:0;transform:translate(var(--bx,0),var(--by,-48px)) scale(1.65)}}
 .welcome-fw{position:fixed;pointer-events:none;z-index:9998;font-size:1.3rem;animation:welcome-fw 1.35s ease-out forwards}
@@ -678,6 +678,7 @@ body.view-draw .content{overflow:hidden!important}
     <p>叮咚～双向奔赴，欢迎来到我们的小世界✨</p>
   </div>
 </div>
+<audio id="authBgm" preload="metadata" playsinline style="display:none"></audio>
 <script src="app-auth.js"></script>
 <div class="app">
   <aside class="sidebar">
@@ -711,16 +712,10 @@ body.view-draw .content{overflow:hidden!important}
 <div class="toast" id="toast"></div>
 <nav class="bottom-nav" id="bottomNav"></nav>
 
-<script src="gaokao-bank.js" defer></script>
-<script src="lib/katex.min.js" defer></script>
 <script src="app-main.js" defer></script>
-<script src="lib/html2canvas.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="sync-config.js" defer></script>
-<script src="app-sync.js" defer></script>
-<script src="app-chat.js" defer></script>
 <script src="app-mobile.js" defer></script>
 <script src="app-ext.js" defer></script>
+<script src="app-lazy.js" defer></script>
 <script defer>
 function bootApp() {
   document.body.classList.add('app-ready');
@@ -730,8 +725,18 @@ function bootApp() {
     setTimeout(() => launchWelcomeHeartFireworks(), 400);
   }
   setTimeout(() => toast('欢迎回来，婉 ❤️ 这里始终为你亮着光 ✨', 2600), 600);
-  setTimeout(() => { if (typeof startGlobalPhotoListener === 'function') startGlobalPhotoListener(); }, 1500);
   render();
+  const loadLazy = () => {
+    if (typeof loadHeavyModules === 'function') {
+      loadHeavyModules(() => {
+        if (typeof startGlobalPhotoListener === 'function') startGlobalPhotoListener();
+      });
+    } else if (typeof startGlobalPhotoListener === 'function') {
+      setTimeout(startGlobalPhotoListener, 800);
+    }
+  };
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(loadLazy, { timeout: 2000 });
+  else setTimeout(loadLazy, 400);
 }
 if (typeof initAuthGate === 'function') initAuthGate(bootApp);
 else bootApp();

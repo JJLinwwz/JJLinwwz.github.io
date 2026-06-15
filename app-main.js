@@ -1830,7 +1830,9 @@ function render() {
       initDraw();
       if (head()) head().style.display = 'flex';
       window.onresize = () => { if (view === 'draw' && window._drawResize) window._drawResize(); };
-      if (typeof startDrawSync === 'function') startDrawSync();
+      if (typeof window.ensureHeavyModule === 'function') {
+        window.ensureHeavyModule('draw', () => { if (typeof startDrawSync === 'function') startDrawSync(); });
+      } else if (typeof startDrawSync === 'function') startDrawSync();
     }, 30);
   }
   if (view === 'photos') {
@@ -1838,7 +1840,9 @@ function render() {
     window._photoInitTimer = setTimeout(() => {
       window._photoInitTimer = null;
       if (view !== 'photos') return;
-      if (typeof startPhotoShare === 'function') startPhotoShare();
+      if (typeof window.ensureHeavyModule === 'function') {
+        window.ensureHeavyModule('photos', () => { if (typeof startPhotoShare === 'function') startPhotoShare(); });
+      } else if (typeof startPhotoShare === 'function') startPhotoShare();
     }, 50);
   }
   if (view === 'chat') {
@@ -1846,7 +1850,9 @@ function render() {
     window._chatInitTimer = setTimeout(() => {
       window._chatInitTimer = null;
       if (view !== 'chat') return;
-      if (typeof startChatSync === 'function') startChatSync();
+      if (typeof window.ensureHeavyModule === 'function') {
+        window.ensureHeavyModule('chat', () => { if (typeof startChatSync === 'function') startChatSync(); });
+      } else if (typeof startChatSync === 'function') startChatSync();
     }, 50);
   }
   if (view === 'graph') setTimeout(initGraph, 30);

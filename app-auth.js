@@ -4,10 +4,10 @@
   const PASS_L2 = '123';
   const KEY_L1 = 'math-auth-l1';
   const KEY = 'math-auth-session';
+  const BGM_FILE = 'liaobiaoxinyi.mp3';
 
-  function isInAppBrowser() {
-    return /MicroMessenger|QQ\//i.test(navigator.userAgent || '');
-  }
+  let bgm = null;
+  let bgmTried = false;
 
   function ssGet(k) {
     try { return sessionStorage.getItem(k); } catch { return null; }
@@ -21,8 +21,9 @@
   function tap(el, fn) {
     if (!el || el._authTap) return;
     el._authTap = true;
-    el.addEventListener('click', fn);
-    el.addEventListener('touchend', e => { e.preventDefault(); fn(e); }, { passive: false });
+    const wrap = e => { tryPlayBgm(); fn(e); };
+    el.addEventListener('click', wrap);
+    el.addEventListener('touchend', e => { e.preventDefault(); wrap(e); }, { passive: false });
   }
 
   function showMsg(id, text, danger) {
@@ -30,6 +31,54 @@
     if (!el) return;
     el.textContent = text;
     if (danger !== undefined) el.style.color = danger ? 'var(--danger, #c47a7a)' : '';
+  }
+
+  function ensureBgm() {
+    if (bgm) return bgm;
+    const el = document.getElementById('authBgm');
+    if (!el) return null;
+    el.src = BGM_FILE;
+    el.loop = false;
+    bgm = el;
+    el.addEventListener('error', () => {
+      document.getElementById('authMusicBtn')?.remove();
+    });
+    el.addEventListener('ended', () => {
+      try { el.pause(); el.currentTime = 0; } catch {}
+      document.getElementById('authMusicBtn')?.remove();
+    });
+    return bgm;
+  }
+
+  function tryPlayBgm() {
+    if (isAuthed() && window._authEarlyDone) return;
+    const a = ensureBgm();
+    if (!a || (!a.paused && a.currentTime > 0)) return;
+    a.play().then(() => {
+      document.getElementById('authMusicBtn')?.remove();
+    }).catch(() => showMusicBtn());
+  }
+
+  function showMusicBtn() {
+    if (document.getElementById('authMusicBtn')) return;
+    const gate = document.getElementById('authGate') || document.getElementById('authGate2');
+    if (!gate) return;
+    const btn = document.createElement('button');
+    btn.id = 'authMusicBtn';
+    btn.type = 'button';
+    btn.className = 'auth-music-btn';
+    btn.textContent = '🎵 聊表心意';
+    const onTap = e => {
+      e.preventDefault();
+      const au = ensureBgm();
+      if (!au) return;
+      au.play().catch(() => {
+        btn.textContent = '🎵 请先放入 liaobiaoxinyi.mp3';
+      });
+    };
+    btn.addEventListener('click', onTap);
+    btn.addEventListener('touchend', onTap, { passive: false });
+    gate.appendChild(btn);
   }
 
   function unlock(onDone) {
@@ -42,6 +91,7 @@
       gate?.remove();
       gate2?.remove();
       document.getElementById('authSuccessModal')?.remove();
+      document.getElementById('authMusicBtn')?.remove();
       document.body.classList.remove('auth-pending');
       if (app) { app.style.display = ''; app.classList.add('ready'); }
       document.body.classList.add('app-ready');
@@ -73,6 +123,7 @@
       if (gate) gate.style.display = 'none';
       gate2.style.display = 'flex';
       gate2.classList.remove('auth-out');
+      tryPlayBgm();
       document.getElementById('authPwd2')?.focus();
     }, 300);
   }
@@ -153,19 +204,18 @@
     }
 
     window._authEarlyBound = true;
+    ensureBgm();
+    setTimeout(tryPlayBgm, 300);
 
     setTimeout(() => {
-      if (!window._bootAppCalled && document.getElementById('authGate')?.offsetParent !== null) {
-        showMsg('authMsg', '功能加载中，可先输入口令～');
+      if (!window._bootAppCalled && (document.getElementById('authGate') || document.getElementById('authGate2'))) {
+        const msgEl = document.getElementById('authMsg') || document.getElementById('authMsg2');
+        if (msgEl && !msgEl.textContent) showMsg(msgEl.id, '可先输入口令，后台正在加载…');
       }
-    }, 2500);
+    }, 1200);
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bootEarlyAuth);
-  } else {
-    bootEarlyAuth();
-  }
+  bootEarlyAuth();
 
   window.initAuthGate = function (onUnlock) {
     window._bootAppFn = onUnlock;
