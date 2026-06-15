@@ -632,26 +632,18 @@ function initWeakness() {
 
 // ── 渲染：更多（手机） ──
 function renderMore() {
+  const st = typeof getCoupleHomeStats === 'function' ? getCoupleHomeStats() : { hundredDone: 0, hundredTotal: 0 };
   const items = [
-    {go:'feedback',icon:'💌',label:'家教反馈',sub:'学习单'},
-    {go:'weakness',icon:'📊',label:'薄弱分析',sub:'错题归类'},
-    {go:'quiz',icon:'📝',label:'高考真题',sub:`${typeof quizFavs!=='undefined'?quizFavs.length:0} 收藏`},
-    {go:'reports',icon:'📈',label:'学情报告',sub:`${students.length} 位学生`},
-    {go:'mistakes',icon:'📕',label:'错题本',sub:`${mistakes.length} 条`},
-    {go:'notes',icon:'📓',label:'教学笔记',sub:`${notes.length} 篇`},
-    {go:'custom',icon:'✨',label:'我的公式',sub:`${customFormulas.length} 条`},
-    {go:'formula',icon:'✏️',label:'公式编辑',sub:'LaTeX'},
-    {go:'draw',icon:'💕',label:'双人画板',sub:'同屏+回忆',homeStatus:'draw'},
-    {go:'photos',icon:'📷',label:'暖光相簿',sub:'我们的小相馆',homeStatus:'photos'},
-    {go:'chat',icon:'💬',label:'悄悄话',sub:'文字语音图片',homeStatus:'chat'},
-    {go:'graph',icon:'📈',label:'图形绘制',sub:'函数图像'},
-    {go:'timer',icon:'⏱',label:'课堂计时',sub:'倒计时'},
-    {go:'templates',icon:'📝',label:'教学模板',sub:'教案框架'},
+    {go:'wishes',icon:'🌟',label:'共同心愿',sub:'旅行·美食·小事'},
+    {go:'hundred',icon:'💫',label:'一百件小事',sub:`${st.hundredDone}/${st.hundredTotal || 0} 完成`},
+    {go:'growth',icon:'🌱',label:'成长记录',sub:'随笔与留言'},
+    {go:'draw',icon:'🎨',label:'涂鸦小窝',sub:'同屏画画',homeStatus:'draw'},
+    {go:'photos',icon:'📷',label:'回忆相册',sub:'合照与碎片',homeStatus:'photos'},
+    {go:'chat',icon:'💬',label:'私密树洞',sub:'碎碎念与情话',homeStatus:'chat'},
     {go:'backup',icon:'💾',label:'数据备份',sub:backupStatusText().slice(0,12)},
-    {go:'ref',icon:'📐',label:'公式速查',sub:'12 模块'}
   ];
   return `<div class="content-inner">
-    <h2 class="section-title">更多功能</h2>
+    <h2 class="section-title">更多</h2>
     <div class="more-grid">${items.map(i=>`
       <div class="quick-btn" data-go="${i.go}"><div class="icon">${i.icon}</div><div class="label">${i.label}</div><div class="sub"${i.homeStatus ? ` data-sync-home-status="${i.homeStatus}"` : ''}>${i.sub}</div></div>`).join('')}
     </div>
@@ -788,21 +780,20 @@ function renderBottomNav() {
   document.body.classList.remove('bnav-auto-hidden');
   el.style.pointerEvents = 'auto';
   const tabs = [
-    {v:'home',icon:'🏠',label:'工作台'},
-    {v:'refhub',icon:'📐',label:'公式'},
-    {v:'mistakes',icon:'📕',label:'错题'},
-    {v:'draw',icon:'🖊️',label:'画板'},
+    {v:'home',icon:'🏠',label:'小窝'},
+    {v:'draw',icon:'🎨',label:'涂鸦'},
+    {v:'photos',icon:'📷',label:'相册'},
+    {v:'chat',icon:'💬',label:'树洞'},
     {v:'more',icon:'⚙️',label:'更多'}
   ];
-  const refViews = ['refhub','section','formula','custom'];
-  const drawViews = ['draw','graph'];
-  let cur = 'more';
+  const drawViews = ['draw'];
+  const moreViews = ['more','wishes','hundred','growth','backup'];
+  let cur = 'home';
   if (view === 'home') cur = 'home';
-  else if (refViews.includes(view) || showFav) cur = 'refhub';
-  else if (view === 'mistakes' || view === 'weakness') cur = 'mistakes';
-  else if (view === 'photos') cur = 'more';
   else if (drawViews.includes(view)) cur = 'draw';
-  else if (view === 'more' || view === 'feedback' || view === 'reports' || view === 'quiz') cur = 'more';
+  else if (view === 'photos') cur = 'photos';
+  else if (view === 'chat') cur = 'chat';
+  else if (moreViews.includes(view)) cur = 'more';
   el.innerHTML = tabs.map(t=>`<button type="button" class="bnav-item${cur===t.v?' active':''}" data-bnav="${t.v}"><span class="bnav-icon">${t.icon}</span><span class="bnav-label">${t.label}</span></button>`).join('');
 }
 
@@ -816,13 +807,8 @@ function patchQuizGen() {
 }
 
 function initExtView() {
-  if (view==='reports') setTimeout(initReports,30);
   if (view==='backup') setTimeout(initBackup,30);
-  if (view==='timer') setTimeout(initTimer,30);
-  if (view==='templates') setTimeout(initTemplates,30);
-  if (view==='refhub') setTimeout(bindMobileSearch,30);
-  if (view==='feedback') setTimeout(initFeedback,30);
-  if (view==='weakness') setTimeout(initWeakness,30);
+  if (typeof initCoupleView === 'function') initCoupleView(view);
   renderBottomNav();
   if ((view === 'home' || view === 'more') && typeof window.syncRefreshHomePresence === 'function') {
     window.syncRefreshHomePresence();

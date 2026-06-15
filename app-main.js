@@ -115,16 +115,15 @@ function showFormulaFavModal(key) {
 window.showFormulaFavModal = showFormulaFavModal;
 
 function getGreeting() {
-  const full = typeof TEACHER_FULL !== 'undefined' ? TEACHER_FULL : '蔺婉宁';
   const nick = typeof TEACHER_NICK !== 'undefined' ? TEACHER_NICK : '婉儿';
   const h = new Date().getHours();
-  if (h >= 0 && h < 5) return { title:`${nick}小朋友辛苦啦 🌙`, sub:'已经凌晨了，记得早点休息哦～明天还要元气满满地教书呢', heart:'太晚了，快去睡觉，注意身体 💕' };
-  if (h >= 5 && h < 9) return { title:`早上好，${full} ☀️`, sub:'新的一天开始啦，今天也一定是最温柔、最棒的老师！', heart:'早餐记得吃，别空着肚子上课哦～' };
-  if (h >= 9 && h < 12) return { title:`上午好，${full} 🌸`, sub:'上午辛苦了，你认真教书的样子真的很好看', heart:'累了就喝口温水，休息一下再加油 💗' };
-  if (h >= 12 && h < 14) return { title:`中午好，${full} 🍱`, sub:'中午要好好吃饭、眯一会儿，下午才有力气呀', heart:'午休一下，下午继续闪闪发光 ✨' };
-  if (h >= 14 && h < 18) return { title:`下午好，${full} 🌷`, sub:'下午的工作快接近尾声啦，坚持住，你超棒的！', heart:'你的专属数学小屋，今天也为你亮着灯~' };
-  if (h >= 18 && h < 22) return { title:`晚上好，${full}小朋友 ✨`, sub:'辛苦一天啦，今晚也要好好照顾自己哦', heart:'忙完了早点休息，别熬太晚 🌙' };
-  return { title:`${nick}小朋友辛苦啦 🌙`, sub:'夜深了，不要太操劳，记得早点休息', heart:'明天见，做个甜甜的梦 💕' };
+  if (h >= 0 && h < 5) return { title:`${nick}，夜深了 🌙`, sub:'早点休息，明天继续一起记录生活', heart:'黑夜里也有人在想你 💕' };
+  if (h >= 5 && h < 9) return { title:`早安，${nick} ☀️`, sub:'新的一天，一起打卡、一起变好', heart:'今天也要开心呀～' };
+  if (h >= 9 && h < 12) return { title:`上午好，${nick} 🌸`, sub:'想 TA 了就去树洞说句话吧', heart:'专属小窝始终为你亮着灯 ✨' };
+  if (h >= 12 && h < 14) return { title:`中午好，${nick} 🍱`, sub:'记得吃饭，也可以上传一张午餐到相册', heart:'陪伴是最长情的告白 💗' };
+  if (h >= 14 && h < 18) return { title:`下午好，${nick} 🌷`, sub:'看看心愿清单，有没有今天可以完成的小事', heart:'我们在慢慢把向往变成现实' };
+  if (h >= 18 && h < 22) return { title:`晚上好，${nick} ✨`, sub:'写写成长随笔，记录今天的心情与收获', heart:'谢谢你出现在我的每一天里' };
+  return { title:`${nick}，该休息啦 🌙`, sub:'今天也辛苦了，做个好梦', heart:'明天见，我一直都在 💕' };
 }
 
 let _toastTimer = null;
@@ -210,22 +209,18 @@ function pickOneProblem(excludeIds=[]) {
 //  渲染
 // ═══════════════════════════════════════
 function renderNav() {
-  const todayM = mistakes.filter(m=>m.date===today()).length;
-  const todayN = notes.filter(n=>n.date===today()).length;
-  let h = `<button class="nav-item${view==='home'?' active':''}" data-v="home">🏠 工作台</button>`;
-  h += `<div class="nav-group">教学工具</div>`;
-  h += `<button class="nav-item${view==='quiz'?' active':''}" data-v="quiz">📝 高考真题</button>`;
-  h += `<button class="nav-item${view==='formula'?' active':''}" data-v="formula">✏️ 公式编辑</button>`;
-  h += `<button class="nav-item${view==='draw'?' active':''}" data-v="draw">🖊️ 手写画板</button>`;
-  h += `<button class="nav-item${view==='graph'?' active':''}" data-v="graph">📈 图形绘制</button>`;
-  h += `<button class="nav-item${view==='mistakes'?' active':''}" data-v="mistakes">📕 错题本${mistakes.length?`<span class="nav-badge">${mistakes.length}</span>`:''}</button>`;
-  h += `<button class="nav-item${view==='notes'?' active':''}" data-v="notes">📓 教学笔记${todayN?`<span class="nav-badge">${todayN}</span>`:''}</button>`;
-  h += `<button class="nav-item${view==='feedback'?' active':''}" data-v="feedback">💌 家教反馈</button>`;
-  h += `<button class="nav-item${view==='weakness'?' active':''}" data-v="weakness">📊 薄弱分析</button>`;
-  h += `<div class="nav-group">公式速查</div>`;
-  DATA.forEach(d => {
-    h += `<button class="nav-item${view==='section'&&sectionId===d.id?' active':''}" data-v="section" data-id="${d.id}">${d.icon} ${d.name}</button>`;
-  });
+  const coupleViews = ['wishes','hundred','growth','draw','photos','chat'];
+  let h = `<button class="nav-item${view==='home'?' active':''}" data-v="home">🏠 二人小窝</button>`;
+  h += `<div class="nav-group">陪伴记录</div>`;
+  h += `<button class="nav-item${view==='wishes'?' active':''}" data-v="wishes">🌟 共同心愿</button>`;
+  h += `<button class="nav-item${view==='hundred'?' active':''}" data-v="hundred">💫 一百件小事</button>`;
+  h += `<button class="nav-item${view==='growth'?' active':''}" data-v="growth">🌱 成长记录</button>`;
+  h += `<button class="nav-item${view==='draw'?' active':''}" data-v="draw">🎨 涂鸦小窝</button>`;
+  h += `<button class="nav-item${view==='photos'?' active':''}" data-v="photos">📷 回忆相册</button>`;
+  h += `<button class="nav-item${view==='chat'?' active':''}" data-v="chat">💬 私密树洞</button>`;
+  h += `<div class="nav-group">设置</div>`;
+  h += `<button class="nav-item${view==='more'?' active':''}" data-v="more">⚙️ 更多</button>`;
+  h += `<button class="nav-item${view==='backup'?' active':''}" data-v="backup">💾 数据备份</button>`;
   $('#nav').innerHTML = h;
 }
 
@@ -236,34 +231,28 @@ function renderBottomNav() {
   document.body.classList.remove('bnav-auto-hidden');
   el.style.pointerEvents = 'auto';
   const tabs = [
-    { v: 'home', icon: '🏠', label: '工作台' },
-    { v: 'refhub', icon: '📐', label: '公式' },
-    { v: 'mistakes', icon: '📕', label: '错题' },
-    { v: 'draw', icon: '🖊️', label: '画板' },
+    { v: 'home', icon: '🏠', label: '小窝' },
+    { v: 'draw', icon: '🎨', label: '涂鸦' },
+    { v: 'photos', icon: '📷', label: '相册' },
+    { v: 'chat', icon: '💬', label: '树洞' },
     { v: 'more', icon: '⚙️', label: '更多' },
   ];
-  const refViews = ['refhub', 'section', 'formula', 'custom'];
-  const drawViews = ['draw', 'graph'];
-  let cur = 'more';
+  const drawViews = ['draw'];
+  const moreViews = ['more', 'wishes', 'hundred', 'growth', 'backup'];
+  let cur = 'home';
   if (view === 'home') cur = 'home';
-  else if (refViews.includes(view) || showFav) cur = 'refhub';
-  else if (view === 'mistakes' || view === 'weakness') cur = 'mistakes';
-  else if (view === 'photos') cur = 'more';
   else if (drawViews.includes(view)) cur = 'draw';
-  else if (view === 'more' || view === 'feedback' || view === 'reports' || view === 'quiz') cur = 'more';
+  else if (view === 'photos') cur = 'photos';
+  else if (view === 'chat') cur = 'chat';
+  else if (moreViews.includes(view)) cur = 'more';
   el.innerHTML = tabs.map(t =>
     `<button type="button" class="bnav-item${cur === t.v ? ' active' : ''}" data-bnav="${t.v}"><span class="bnav-icon">${t.icon}</span><span class="bnav-label">${t.label}</span></button>`
   ).join('');
 }
 
 function renderTopbar() {
-  const isRef = view === 'home' || view === 'section' || showFav || view === 'refhub';
   const mob = window.innerWidth <= 768;
-  $('#searchWrap').style.display = (isRef || (mob && view === 'refhub')) ? '' : 'none';
-  if (mob) {
-    const si = document.getElementById('searchInput');
-    if (si) si.placeholder = '搜索公式、知识点…';
-  }
+  $('#searchWrap').style.display = 'none';
   let h = '';
   let mh = '';
   const addMob = (html, id, cls) => { mh += html.replace('class="btn', `class="mact${cls?' '+cls:''}`).replace(/id="([^"]+)"/, `id="m_$1"`); };
@@ -361,20 +350,13 @@ function bindTopbar() {
 }
 
 function renderHome() {
-  const tf = DATA.reduce((s,d)=>s+d.formulas.length,0);
-  const tm = mistakes.length, tn = notes.length;
-  const todayM = mistakes.filter(m=>m.date===today()).length;
-  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
-  const weekM = mistakes.filter(m=>new Date(m.date)>=weekAgo).length;
   const g = getGreeting();
-  const bankN = typeof GAOKAO_BANK !== 'undefined' ? GAOKAO_BANK.length : 0;
-  const studentN = typeof students !== 'undefined' ? students.length : 0;
-  const favFormulaBlock = formulaFavs.length ? `<div class="home-fav-formulas">
-    <div class="hff-head"><span>⭐ 常用公式收藏</span><button class="btn" data-go="refhub" style="padding:4px 10px;font-size:.75rem">全部 →</button></div>
-    <div class="fav-formula-grid">${formulaFavs.slice(0, 8).map(f => `<div class="fav-formula-chip" data-ffkey="${esc(f.key)}"><span class="ffc-mod">${esc(f.moduleName || topicName(f.moduleId))}</span><span class="ffc-name">${esc(f.name)}</span></div>`).join('')}</div>
-  </div>` : '';
+  const st = typeof getCoupleHomeStats === 'function' ? getCoupleHomeStats() : { wishDone: 0, wishTotal: 0, hundredDone: 0, hundredTotal: 0, hundredPct: 0, myChecked: false, peerChecked: false, bothChecked: false, checkinDays: 0 };
   const kittySvg = `<svg class="home-deco-mascot home-deco-kitty" viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="44" r="26" fill="#fff" stroke="#e8b4bc" stroke-width="2"/><ellipse cx="40" cy="18" rx="10" ry="6" fill="#f5a8b8"/><path d="M18 30 L12 12 L28 24" fill="#fff" stroke="#e8b4bc" stroke-width="2"/><path d="M62 30 L68 12 L52 24" fill="#fff" stroke="#e8b4bc" stroke-width="2"/><circle cx="32" cy="42" r="2.5" fill="#666"/><circle cx="48" cy="42" r="2.5" fill="#666"/><ellipse cx="40" cy="50" rx="3" ry="2" fill="#f5a8b8"/><path d="M36 54 Q40 58 44 54" fill="none" stroke="#c9a0a8" stroke-width="1.5"/></svg>`;
   const luluSvg = `<svg class="home-deco-mascot home-deco-lulu" viewBox="0 0 80 80" aria-hidden="true"><ellipse cx="40" cy="48" rx="28" ry="24" fill="#ffd93d" stroke="#f0b429" stroke-width="2"/><ellipse cx="40" cy="38" rx="18" ry="14" fill="#ff9f43"/><circle cx="34" cy="36" r="2" fill="#4a6fa5"/><circle cx="46" cy="36" r="2" fill="#4a6fa5"/><ellipse cx="40" cy="42" rx="4" ry="2" fill="#e85d5d"/><ellipse cx="40" cy="14" rx="5" ry="3" fill="#7ed957"/></svg>`;
+  const checkinBlock = st.myChecked
+    ? `<p class="checkin-done">✅ 今日已签到${st.bothChecked ? ' · 两人都到齐啦 💕' : st.peerChecked ? ' · 等 TA 也来打卡' : ''}</p>`
+    : `<div class="checkin-bar"><p style="font-size:.82rem;margin-bottom:8px">今日陪伴打卡 · 选心情签到</p><div class="checkin-moods">${['😊','🥰','💪','✨','💕','🌸'].map(m=>`<button type="button" class="checkin-mood" data-checkin-mood="${m}">${m}</button>`).join('')}<input type="text" id="checkinNote" placeholder="一句话（可选）" maxlength="60" style="flex:1;min-width:100px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;font-size:.82rem"></div></div>`;
   return `<div class="content-inner">
     <div class="home-hero">
       ${kittySvg}${luluSvg}
@@ -386,30 +368,24 @@ function renderHome() {
         </div>
       </div>
       <p class="greet-heart">${g.heart}</p>
-      <p style="font-size:.75rem;color:var(--text2);margin-top:10px">今天是 ${fmtDate(today())} · 陪你备课的一天 🎀</p>
+      <p style="font-size:.75rem;color:var(--text2);margin-top:10px">今天是 ${fmtDate(today())} · 只属于我们的小世界 🎀</p>
     </div>
-    ${favFormulaBlock}
+    ${checkinBlock}
     <div class="home-quick">
-      <div class="quick-btn" data-go="feedback"><div class="icon">💌</div><div class="label">家教反馈单</div><div class="sub">学习目标 · 课后反馈</div></div>
-      <div class="quick-btn" data-go="weakness"><div class="icon">📊</div><div class="label">薄弱点分析</div><div class="sub">自动归类错题</div></div>
-      <div class="quick-btn" data-go="quiz"><div class="icon">📝</div><div class="label">高考真题</div><div class="sub">题库 ${bankN} 道 · 课前小测</div></div>
-      <div class="quick-btn" data-go="reports"><div class="icon">📈</div><div class="label">学情报告</div><div class="sub">${studentN} 位学生</div></div>
-      <div class="quick-btn" data-go="draw"><div class="icon">💕</div><div class="label">双人画板</div><div class="sub" data-sync-home-status="draw">同屏画画 · 语音 · 回忆相册</div></div>
-      <div class="quick-btn" data-go="photos"><div class="icon">📷</div><div class="label">暖光相簿</div><div class="sub" data-sync-home-status="photos">我们的专属小相馆</div></div>
-      <div class="quick-btn" data-go="chat"><div class="icon">💬</div><div class="label">悄悄话</div><div class="sub" data-sync-home-status="chat">文字 · 语音 · 图片</div></div>
-      <div class="quick-btn" data-go="timer"><div class="icon">⏱</div><div class="label">课堂计时</div><div class="sub">横屏倒计时</div></div>
-      <div class="quick-btn" data-go="mistakes"><div class="icon">📕</div><div class="label">记录错题</div><div class="sub">已收录 ${tm} 道</div></div>
-      <div class="quick-btn" data-go="notes"><div class="icon">📓</div><div class="label">教学笔记</div><div class="sub">今日 ${notes.filter(n=>n.date===today()).length} 篇</div></div>
-      <div class="quick-btn" data-go="section" data-id="func"><div class="icon">📐</div><div class="label">公式速查</div><div class="sub">${DATA.length} 模块 · ${tf} 条</div></div>
+      <div class="quick-btn" data-go="draw"><div class="icon">🎨</div><div class="label">双人涂鸦小窝</div><div class="sub" data-sync-home-status="draw">一起画画、语音闲聊、存放合照</div></div>
+      <div class="quick-btn" data-go="photos"><div class="icon">📷</div><div class="label">回忆相册</div><div class="sub" data-sync-home-status="photos">存放合照、聊天截图、日常碎片</div></div>
+      <div class="quick-btn" data-go="chat"><div class="icon">💬</div><div class="label">私密树洞悄悄话</div><div class="sub" data-sync-home-status="chat">写给对方的碎碎念、心事、情话</div></div>
+      <div class="quick-btn" data-go="wishes"><div class="icon">🌟</div><div class="label">共同心愿清单</div><div class="sub">旅行 · 美食 · 生活小事</div></div>
+      <div class="quick-btn" data-go="hundred"><div class="icon">💫</div><div class="label">我们的一百件小事</div><div class="sub">已完成 ${st.hundredDone}/${st.hundredTotal || 0} · ${st.hundredPct}%</div></div>
+      <div class="quick-btn" data-go="growth"><div class="icon">🌱</div><div class="label">成长记录簿</div><div class="sub">见证彼此改变与收获</div></div>
     </div>
     <div class="home-stats">
-      <div><div class="stat-num">${tm}</div><div class="stat-label">错题累计</div></div>
-      <div><div class="stat-num">${weekM}</div><div class="stat-label">近7日新增错题</div></div>
-      <div><div class="stat-num">${tn}</div><div class="stat-label">教学笔记</div></div>
-      <div><div class="stat-num">${DATA.length}</div><div class="stat-label">知识模块</div></div>
+      <div><div class="stat-num">${st.wishDone}</div><div class="stat-label">心愿已完成</div></div>
+      <div><div class="stat-num">${st.hundredPct}%</div><div class="stat-label">约定进度</div></div>
+      <div><div class="stat-num">${st.checkinDays}</div><div class="stat-label">陪伴打卡天</div></div>
+      <div><div class="stat-num">${st.bothChecked ? '💕' : '—'}</div><div class="stat-label">今日双人签到</div></div>
     </div>
-    <p class="home-tip-kbd" style="font-size:.8rem;color:var(--text2);margin-bottom:10px">使用提示：<kbd>Ctrl</kbd>+<kbd>K</kbd> 搜索公式 · 数据保存在本机浏览器 · 建议定期点「备份」</p>
-    <div class="home-grid">${DATA.map(d=>`<div class="home-card" data-go="section" data-id="${d.id}"><h3>${d.icon} ${d.name}</h3><p>${d.desc}</p></div>`).join('')}</div>
+    <p class="home-tip-kbd" style="font-size:.8rem;color:var(--text2);margin-bottom:10px">数据云端永久保存 · 建议定期点「备份」 · 画板/相册/树洞需连接云端</p>
   </div>`;
 }
 
@@ -814,8 +790,8 @@ function renderFormula() {
 
 function renderChat() {
   return `<div class="content-inner chat-page">
-    <h2 class="section-title">悄悄话 💬</h2>
-    <p class="section-desc">专属两人的聊天，文字语音图片都会永久保存</p>
+    <h2 class="section-title">私密树洞悄悄话 💬</h2>
+    <p class="section-desc">写给对方的碎碎念、心事、情话，永久保存</p>
     <div class="love-sync-panel sync-panel-mini">
       <div class="love-sync-head">
         <span class="sync-dot off" id="syncDot"></span>
@@ -843,17 +819,17 @@ function renderChat() {
 
 function renderPhotos() {
   return `<div class="content-inner photo-share-page">
-    <h2 class="section-title">暖光相簿</h2>
-    <p class="section-desc">我们的专属小相馆，存放照片和留言</p>
+    <h2 class="section-title">回忆相册 📷</h2>
+    <p class="section-desc">存放合照、聊天截图、日常碎片</p>
     <div class="love-sync-panel">
       <div class="love-sync-head">
         <span class="sync-dot off" id="syncDot"></span>
-        <span class="love-sync-title">暖光相簿</span>
+        <span class="love-sync-title">回忆相册</span>
         <span class="love-sync-status" id="syncStatus">连接中…</span>
       </div>
       <div class="sync-panel-body">
         <div class="love-sync-presence" id="syncPresence">已连接云端，照片实时同步</div>
-        <button type="button" class="btn" data-go="chat" style="margin-top:8px;width:100%">💬 去悄悄话</button>
+        <button type="button" class="btn" data-go="chat" style="margin-top:8px;width:100%">💬 去树洞说句话</button>
       </div>
     </div>
     <div class="photo-upload-card">
@@ -880,8 +856,8 @@ function renderDraw() {
   const syncPanelMini = !mob;
   const palBtns = PAINT_PALETTE.map(c => `<button type="button" class="paint-pal" data-color="${c}" style="background:${c}" title="${c}"></button>`).join('');
   return `<div class="content-inner draw-page">
-    <h2 class="section-title">双人画板 💕</h2>
-    <p class="section-desc">${mob ? '和 TA 实时同屏 · 大画布手写 · 云端永久保存' : '专属双人小屋 · 画笔/形状/填色 · 你画她看见 · 还可存入回忆相册'}</p>
+    <h2 class="section-title">双人涂鸦小窝 🎨</h2>
+    <p class="section-desc">${mob ? '和 TA 实时同屏 · 一起画画 · 语音闲聊 · 云端永久保存' : '一起画画、语音闲聊，作品可存入回忆相册'}</p>
     <div class="love-sync-panel${syncPanelMini ? ' sync-panel-mini' : ''}${syncPanelMini && window._syncPanelExpanded ? ' expanded' : ''}" id="loveSyncPanel">
       <div class="love-sync-head">
         <span class="sync-dot off" id="syncDot"></span>
@@ -894,8 +870,8 @@ function renderDraw() {
         <div class="love-sync-actions">
           <button type="button" class="btn btn-primary" id="syncSetupBtn">☁️ 连接云端</button>
           <button type="button" class="btn btn-primary" id="syncSaveHistory">📷 存入回忆</button>
-          <button type="button" class="btn" data-go="photos">🖼 暖光相簿</button>
-          <button type="button" class="btn" data-go="chat">💬 悄悄话</button>
+          <button type="button" class="btn" data-go="photos">📷 回忆相册</button>
+          <button type="button" class="btn" data-go="chat">💬 私密树洞</button>
           <button type="button" class="btn" id="syncHelpBtn">💡 说明</button>
         </div>
         <div class="sync-history-wrap">
@@ -905,7 +881,7 @@ function renderDraw() {
       </div>
     </div>
     <div class="draw-mobile-head">
-      <span class="draw-mobile-title">🖊️ 画板<span class="sync-dot-mobile off" id="syncDotMobile"></span></span>
+      <span class="draw-mobile-title">🎨 涂鸦<span class="sync-dot-mobile off" id="syncDotMobile"></span></span>
       <div class="draw-head-actions">
         <button type="button" class="draw-head-btn" id="syncSheetBtn" title="同步/回忆">📡</button>
         <button type="button" class="draw-head-btn" id="drawVoiceBtn">🎤</button>
@@ -1695,6 +1671,8 @@ function leaveHeavyPage() {
 
 function navigateTo(nextView, opts) {
   if (!nextView) return;
+  const retired = ['quiz','mistakes','notes','feedback','weakness','reports','timer','refhub','section','formula','custom','graph','templates','ref','quizfavs'];
+  if (retired.includes(nextView)) { nextView = 'home'; }
   if (typeof window.forceUnlockUI === 'function') window.forceUnlockUI();
   opts = opts || {};
   const from = view;
@@ -1811,12 +1789,13 @@ function render() {
   renderTopbar();
   const c = $('#content');
   if (!c) return;
-  const extViews = ['reports','custom','backup','timer','templates','more','refhub','feedback','weakness'];
+  const extViews = ['backup','more','wishes','hundred','growth'];
+  const coupleViews = ['wishes','hundred','growth'];
   try {
-    if (extViews.includes(view) && typeof renderMore !== 'function') {
+    if ((extViews.includes(view) || coupleViews.includes(view)) && typeof renderMore !== 'function' && typeof renderWishes !== 'function') {
       c.innerHTML = '<div class="content-inner"><p style="text-align:center;padding:48px 16px;color:var(--text2)">模块加载中，请稍候…</p></div>';
       if (typeof loadHeavyModules === 'function') loadHeavyModules(() => render());
-    } else if (showFav) c.innerHTML = renderFavs();
+    } else if (showFav) c.innerHTML = renderHome();
     else if (view === 'home') c.innerHTML = renderHome();
     else if (view === 'section') c.innerHTML = renderSection(sectionId);
     else if (view === 'quizfavs') c.innerHTML = renderQuizFavs();
@@ -1828,16 +1807,11 @@ function render() {
     else if (view === 'graph') c.innerHTML = renderGraph();
     else if (view === 'mistakes') c.innerHTML = renderMistakes();
     else if (view === 'notes') c.innerHTML = renderNotes();
-    else if (view === 'reports' && typeof renderReports === 'function') c.innerHTML = renderReports();
-    else if (view === 'custom' && typeof renderCustomFormula === 'function') c.innerHTML = renderCustomFormula();
+    else if (view === 'wishes' && typeof renderWishes === 'function') c.innerHTML = renderWishes();
+    else if (view === 'hundred' && typeof renderHundred === 'function') c.innerHTML = renderHundred();
+    else if (view === 'growth' && typeof renderGrowth === 'function') c.innerHTML = renderGrowth();
     else if (view === 'backup' && typeof renderBackup === 'function') c.innerHTML = renderBackup();
-    else if (view === 'timer' && typeof renderTimer === 'function') c.innerHTML = renderTimer();
-    else if (view === 'templates' && typeof renderTemplates === 'function') c.innerHTML = renderTemplates();
     else if (view === 'more' && typeof renderMore === 'function') c.innerHTML = renderMore();
-    else if (view === 'refhub' && typeof renderRefHub === 'function') c.innerHTML = renderRefHub();
-    else if (view === 'ref') { view = 'refhub'; c.innerHTML = typeof renderRefHub === 'function' ? renderRefHub() : ''; }
-    else if (view === 'feedback' && typeof renderFeedback === 'function') c.innerHTML = renderFeedback();
-    else if (view === 'weakness' && typeof renderWeakness === 'function') c.innerHTML = renderWeakness();
     else c.innerHTML = renderHome();
   } catch (e) {
     console.error('render content error', e);
@@ -1850,6 +1824,7 @@ function render() {
   document.body.classList.toggle('view-photos', view === 'photos');
 
   if (typeof initExtView === 'function') initExtView();
+  if (typeof initCoupleView === 'function') initCoupleView(view);
   if (view === 'home' || view === 'more') {
     setTimeout(() => {
       if (typeof window.syncRefreshHomePresence === 'function') window.syncRefreshHomePresence();

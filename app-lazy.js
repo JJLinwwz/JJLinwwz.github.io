@@ -1,7 +1,7 @@
 // 登录后再加载的重模块（并行加载，不阻塞首屏）
 (function () {
   const LAZY_GROUPS = [
-    ['app-ext.js', 'sync-config.js', 'gaokao-bank.js'],
+    ['app-ext.js', 'sync-config.js', 'app-couple.js'],
     ['app-sync.js', 'app-chat.js'],
     ['lib/katex.min.js', 'lib/html2canvas.min.js'],
   ];

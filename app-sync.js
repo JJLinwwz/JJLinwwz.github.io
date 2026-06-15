@@ -322,9 +322,9 @@
   }
 
   function moduleLabel(page) {
-    if (page === 'draw') return '双人画板';
-    if (page === 'photos') return '暖光相簿';
-    if (page === 'chat') return '悄悄话';
+    if (page === 'draw') return '涂鸦小窝';
+    if (page === 'photos') return '回忆相册';
+    if (page === 'chat') return '私密树洞';
     return '';
   }
 
@@ -464,7 +464,7 @@
     }
     const drawLine = others?.length ? `${line} · 可同屏画画` : '同屏画画 · 等待 TA 上线';
     const photoLine = others?.length ? `${line} · 可实时传图` : '我们的专属小相馆 · 等待 TA';
-    const chatLine = others?.length ? `${line} · 可发悄悄话` : '悄悄话 · 等待 TA 上线';
+    const chatLine = others?.length ? `${line} · 可发树洞消息` : '树洞 · 等待 TA 上线';
     [drawEl, moreDraw].forEach(el => { if (el) el.textContent = drawLine; });
     [photoEl, morePhoto].forEach(el => { if (el) el.textContent = photoLine; });
     [chatEl, moreChat].forEach(el => { if (el) el.textContent = chatLine; });
@@ -480,8 +480,8 @@
 
   function peerWhere(u) {
     const p = u?.page || 'lobby';
-    if (p === 'photos') return '暖光相簿';
-    if (p === 'chat') return '悄悄话';
+    if (p === 'photos') return '回忆相册';
+    if (p === 'chat') return '私密树洞';
     if (p === 'draw') return '画板上';
     return '小屋里';
   }
@@ -1624,7 +1624,7 @@
 
           <button type="button" class="btn btn-primary" id="syncSaveHistorySheet">📷 存入回忆</button>
 
-          <button type="button" class="btn" data-go="photos">🖼 暖光相簿</button>
+          <button type="button" class="btn" data-go="photos">📷 回忆相册</button>
 
         </div>
 

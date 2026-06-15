@@ -56,7 +56,7 @@ if (OFFLINE) {
   }
   const critical = ['app-main.js', 'app-mobile.js', 'app-ext.js', 'app-lazy.js'];
   const lazy = [
-    'gaokao-bank.js', 'lib/katex.min.js', 'lib/html2canvas.min.js',
+    'app-couple.js', 'lib/katex.min.js', 'lib/html2canvas.min.js',
     'sync-config.js', 'app-sync.js', 'app-chat.js',
   ];
   for (const file of critical) {
@@ -74,7 +74,7 @@ if (OFFLINE) {
   // GitHub 轻量版：保留外部 js/图片引用，首屏 HTML 更小
 }
 
-const banner = `<!-- 婉宁老师教学小助手 · ${OFFLINE ? '离线单文件' : 'GitHub轻量'}版 -->\n`;
+const banner = `<!-- 婉宁双人小窝 · ${OFFLINE ? '离线单文件' : 'GitHub轻量'}版 -->\n`;
 if (!html.startsWith('<!--')) html = banner + html;
 
 fs.writeFileSync(OUT, html, 'utf8');

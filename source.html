@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.json">
-<title>婉宁老师教学小助手 🎀</title>
+<title>婉宁双人小窝 🎀</title>
 <link rel="preload" href="xinyi.mp3" as="audio">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -367,6 +367,42 @@ body.auth-pending .bottom-nav{display:none!important}
 .chat-input-actions button{min-width:44px;min-height:44px;padding:0 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface);font-size:1rem;cursor:pointer}
 .chat-input-actions button.on{background:var(--accent-bg);border-color:var(--accent)}
 .chat-empty{text-align:center;color:var(--text2);font-size:.85rem;padding:40px 16px}
+/* 二人小工具 */
+.couple-page{padding-bottom:24px}
+.couple-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.couple-tab{padding:8px 14px;border:1px solid var(--border);border-radius:20px;background:var(--surface);font-size:.82rem;cursor:pointer}
+.couple-tab.on{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+.couple-add-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.couple-add-row input{flex:1;min-width:140px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;font-size:.88rem}
+.couple-add-block{margin-bottom:14px}
+.couple-add-block textarea{width:100%;padding:12px;border:1px solid var(--border);border-radius:12px;font-size:.88rem;resize:vertical;margin-bottom:8px}
+.couple-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:10px;position:relative}
+.couple-item.done{opacity:.75;background:var(--hover)}
+.couple-check{display:flex;align-items:flex-start;gap:8px;font-size:.88rem;cursor:pointer}
+.couple-check input{margin-top:4px;accent-color:var(--accent)}
+.couple-note{font-size:.82rem;color:var(--text2);margin:6px 0 0 24px;line-height:1.5}
+.couple-thumb{max-width:120px;border-radius:8px;margin:8px 0 0 24px;display:block}
+.couple-meta{font-size:.72rem;color:var(--text2);margin-top:6px;padding-left:24px}
+.couple-item-actions{position:absolute;top:10px;right:10px;display:flex;gap:4px}
+.couple-item-actions .btn{padding:4px 8px;font-size:.75rem;min-height:auto}
+.couple-progress-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin:8px 0}
+.couple-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),#e8a0b0);transition:width .3s}
+.couple-progress-text{font-size:.82rem;color:var(--text2);margin-bottom:8px}
+.couple-empty{text-align:center;color:var(--text2);padding:24px;font-size:.86rem}
+.couple-section h3{font-size:.84rem;color:var(--text2);margin:14px 0 8px;font-weight:500}
+.hundred-item{padding-left:48px}
+.hundred-num{position:absolute;left:14px;top:14px;font-size:.82rem;color:var(--accent);font-weight:600}
+.growth-entry{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px}
+.growth-head{font-size:.82rem;color:var(--text2);margin-bottom:8px}
+.growth-body{font-size:.9rem;line-height:1.65;color:var(--text)}
+.growth-replies{margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)}
+.growth-reply{font-size:.84rem;color:var(--text2);margin-bottom:6px;line-height:1.5}
+.growth-actions{margin-top:10px;display:flex;gap:8px}
+.checkin-bar{background:var(--accent-bg);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin:12px 0}
+.checkin-moods{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.checkin-mood{font-size:1.4rem;padding:6px 10px;border:1px solid var(--border);border-radius:12px;background:var(--surface);cursor:pointer}
+.checkin-mood:active{transform:scale(.95)}
+.checkin-done{text-align:center;font-size:.86rem;color:var(--accent);padding:10px;background:var(--accent-bg);border-radius:12px;margin:12px 0}
 @media(max-width:768px){
   .chat-page{min-height:calc(100dvh - var(--bnav-h) - 80px)}
   .chat-messages{max-height:calc(100dvh - var(--bnav-h) - 260px)}
@@ -705,14 +741,14 @@ body.view-draw .content{overflow:hidden!important}
 <div class="app">
   <aside class="sidebar">
     <div class="sidebar-header">
-      <h1>婉宁老师教学小助手</h1>
-      <p>专属小屋 · 速查出题 · 离线也能用 ✨</p>
+      <h1>婉宁双人小窝</h1>
+      <p>专属陪伴 · 记录成长 · 云端同步 ✨</p>
     </div>
     <nav class="nav-list" id="nav"></nav>
   </aside>
   <div class="main">
     <header class="topbar" id="topbar">
-      <div class="mobile-top-brand" id="mobileTopBrand">🎀 婉宁老师教学小助手</div>
+      <div class="mobile-top-brand" id="mobileTopBrand">🎀 婉宁双人小窝</div>
       <div class="mobile-util-scroll" id="mobileUtilScroll"><div class="mobile-util-row" id="mobileUtilRow"></div></div>
       <div class="search-wrap" id="searchWrap">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -723,7 +759,7 @@ body.view-draw .content{overflow:hidden!important}
     <main class="content" id="content">
       <div class="content-inner" id="contentFallback">
         <div class="home-hero" style="padding:20px 18px">
-          <h2 style="color:var(--accent);font-size:1.1rem;margin-bottom:6px">婉宁老师的专属小天地 ✨</h2>
+          <h2 style="color:var(--accent);font-size:1.1rem;margin-bottom:6px">我们的专属小天地 ✨</h2>
           <p style="font-size:.84rem;color:var(--text2)">工作台加载中，请稍候…</p>
         </div>
         <div class="home-quick" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px">
@@ -766,6 +802,7 @@ function bootApp() {
     const loadHeavy = () => {
       if (typeof loadHeavyModules === 'function') {
         loadHeavyModules(() => {
+          if (typeof preloadCoupleData === 'function') preloadCoupleData();
           if (typeof startGlobalPhotoListener === 'function') startGlobalPhotoListener();
           doRender();
         });

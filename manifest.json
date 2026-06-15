@@ -1,7 +1,7 @@
 {
-  "name": "婉宁老师教学小助手",
-  "short_name": "婉宁老师",
-  "description": "高中数学教学助手 - 离线可用",
+  "name": "婉宁双人小窝",
+  "short_name": "双人小窝",
+  "description": "专属二人的陪伴记录小工具",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f8f6f4",
