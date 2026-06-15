@@ -1146,20 +1146,46 @@ body.view-draw .content{overflow:hidden!important}
     }
   }
 
-  function startBgmKeepAlive() {
+  function startBgmKeepAlive(ms) {
     stopBgmKeepAlive();
+    const interval = ms || 2500;
     bgmKeepAliveTimer = setInterval(() => {
       const a = bgm;
       if (!a || !bgmWantPlay || a.ended) { stopBgmKeepAlive(); return; }
       if (a.paused) a.play().catch(() => {});
-    }, 2500);
+      updateMediaSession();
+    }, interval);
+  }
+
+  function updateMediaSession() {
+    if (!('mediaSession' in navigator) || !bgmWantPlay) return;
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: '聊表心意',
+        artist: '婉宁老师',
+        album: '专属小天地'
+      });
+      navigator.mediaSession.playbackState = bgm?.paused ? 'paused' : 'playing';
+      navigator.mediaSession.setActionHandler('play', () => resumeBgm());
+    } catch {}
   }
 
   function bindBgmKeepAlive() {
     if (window._bgmKeepAliveBound) return;
     window._bgmKeepAliveBound = true;
     const resume = () => { if (bgmWantPlay) resumeBgm(); };
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) resume(); });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        if (bgmWantPlay) {
+          startBgmKeepAlive(900);
+          fetchBgmBlob();
+          resumeBgm();
+        }
+      } else {
+        startBgmKeepAlive();
+        resume();
+      }
+    });
     window.addEventListener('pageshow', resume);
     document.addEventListener('touchstart', resume, { passive: true, capture: true });
     document.addEventListener('click', resume, { passive: true, capture: true });
@@ -1263,6 +1289,7 @@ body.view-draw .content{overflow:hidden!important}
       stopBgmRetry();
       showPlayingBadge('🎵 聊表心意');
       startBgmKeepAlive();
+      updateMediaSession();
       scheduleFetchBgmBlob();
     });
     el.addEventListener('ended', () => {
@@ -1395,7 +1422,8 @@ body.view-draw .content{overflow:hidden!important}
       document.body.classList.add('app-ready');
       window._authEarlyDone = true;
       onDone?.();
-      setTimeout(() => { runBootApp(); scheduleBootRetry(); }, 1200);
+      runBootApp();
+      scheduleBootRetry();
     }, 380);
   }
 
@@ -1484,6 +1512,7 @@ body.view-draw .content{overflow:hidden!important}
       app?.classList.add('ready');
       document.body.classList.add('app-ready');
       window._authEarlyDone = true;
+      loadAppScripts();
       return;
     }
 
@@ -1528,6 +1557,16 @@ body.view-draw .content{overflow:hidden!important}
     if (!window._authEarlyBound) bootEarlyAuth();
   };
 
+  window.retryAppBoot = function () {
+    window._bootAppCalled = false;
+    if (typeof render === 'function') {
+      try { render(); } catch (e) { console.error('retry render', e); }
+      return;
+    }
+    runBootApp();
+    scheduleBootRetry();
+  };
+
   window.spawnAuthHeartBurst = spawnAuthHeartBurst;
   window.launchRomanticFinale = launchRomanticFinale;
   window.launchHeartFireworks = launchRomanticFinale;
@@ -1559,8 +1598,8 @@ body.view-draw .content{overflow:hidden!important}
           <p style="font-size:.84rem;color:var(--text2)">工作台加载中，请稍候…</p>
         </div>
         <div class="home-quick" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px">
-          <div class="quick-btn" style="padding:14px;text-align:center;border:1px solid var(--border);border-radius:14px" onclick="location.reload()"><div style="font-size:1.3rem">🔄</div><div style="font-size:.82rem;margin-top:4px">刷新页面</div></div>
-          <div class="quick-btn" style="padding:14px;text-align:center;border:1px solid var(--border);border-radius:14px" onclick="if(typeof render==='function')render()"><div style="font-size:1.3rem">🏠</div><div style="font-size:.82rem;margin-top:4px">重新加载</div></div>
+          <div class="quick-btn" style="padding:14px;text-align:center;border:1px solid var(--border);border-radius:14px" onclick="if(typeof retryAppBoot==='function')retryAppBoot()"><div style="font-size:1.3rem">🔄</div><div style="font-size:.82rem;margin-top:4px">重新加载模块</div></div>
+          <div class="quick-btn" style="padding:14px;text-align:center;border:1px solid var(--border);border-radius:14px" onclick="if(typeof render==='function')render();else if(typeof retryAppBoot==='function')retryAppBoot()"><div style="font-size:1.3rem">🏠</div><div style="font-size:.82rem;margin-top:4px">进入工作台</div></div>
         </div>
       </div>
     </main>
@@ -1577,6 +1616,9 @@ body.view-draw .content{overflow:hidden!important}
 <div class="toast" id="toast"></div>
 <nav class="bottom-nav" id="bottomNav"></nav>
 
+<script src="app-main.js" defer></script>
+<script src="app-mobile.js" defer></script>
+<script src="app-lazy.js" defer></script>
 <script defer>
 function bootApp() {
   try {
@@ -1605,7 +1647,7 @@ function bootApp() {
   } catch (e) {
     console.error('bootApp', e);
     const c = document.getElementById('content');
-    if (c) c.innerHTML = '<div class="content-inner"><p style="text-align:center;padding:48px 16px;color:var(--danger)">页面加载遇到问题，请刷新重试</p><button class="btn btn-primary" style="margin:12px auto;display:block" onclick="location.reload()">刷新页面</button></div>';
+    if (c) c.innerHTML = '<div class="content-inner"><p style="text-align:center;padding:48px 16px;color:var(--danger)">页面加载遇到问题</p><button class="btn btn-primary" style="margin:12px auto;display:block" onclick="if(typeof retryAppBoot===\'function\')retryAppBoot()">重新加载模块</button></div>';
   }
 }
 window._bootAppFn = bootApp;

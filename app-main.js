@@ -1841,7 +1841,7 @@ function render() {
     else c.innerHTML = renderHome();
   } catch (e) {
     console.error('render content error', e);
-    c.innerHTML = '<div class="content-inner"><div class="home-hero"><h2>加载遇到问题</h2><p style="font-size:.85rem;color:var(--text2);margin:8px 0 14px">请点下方按钮刷新，或稍等片刻重试</p><button class="btn btn-primary" type="button" onclick="location.reload()">刷新页面</button></div></div>';
+    c.innerHTML = '<div class="content-inner"><div class="home-hero"><h2>加载遇到问题</h2><p style="font-size:.85rem;color:var(--text2);margin:8px 0 14px">请稍等片刻，或点下方按钮重试</p><button class="btn btn-primary" type="button" onclick="if(typeof retryAppBoot===\'function\')retryAppBoot();else if(typeof render===\'function\')render()">重新加载模块</button></div></div>';
   }
 
   renderBottomNav();

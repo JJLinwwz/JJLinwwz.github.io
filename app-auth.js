@@ -440,20 +440,46 @@
     }
   }
 
-  function startBgmKeepAlive() {
+  function startBgmKeepAlive(ms) {
     stopBgmKeepAlive();
+    const interval = ms || 2500;
     bgmKeepAliveTimer = setInterval(() => {
       const a = bgm;
       if (!a || !bgmWantPlay || a.ended) { stopBgmKeepAlive(); return; }
       if (a.paused) a.play().catch(() => {});
-    }, 2500);
+      updateMediaSession();
+    }, interval);
+  }
+
+  function updateMediaSession() {
+    if (!('mediaSession' in navigator) || !bgmWantPlay) return;
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: '聊表心意',
+        artist: '婉宁老师',
+        album: '专属小天地'
+      });
+      navigator.mediaSession.playbackState = bgm?.paused ? 'paused' : 'playing';
+      navigator.mediaSession.setActionHandler('play', () => resumeBgm());
+    } catch {}
   }
 
   function bindBgmKeepAlive() {
     if (window._bgmKeepAliveBound) return;
     window._bgmKeepAliveBound = true;
     const resume = () => { if (bgmWantPlay) resumeBgm(); };
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) resume(); });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        if (bgmWantPlay) {
+          startBgmKeepAlive(900);
+          fetchBgmBlob();
+          resumeBgm();
+        }
+      } else {
+        startBgmKeepAlive();
+        resume();
+      }
+    });
     window.addEventListener('pageshow', resume);
     document.addEventListener('touchstart', resume, { passive: true, capture: true });
     document.addEventListener('click', resume, { passive: true, capture: true });
@@ -557,6 +583,7 @@
       stopBgmRetry();
       showPlayingBadge('🎵 聊表心意');
       startBgmKeepAlive();
+      updateMediaSession();
       scheduleFetchBgmBlob();
     });
     el.addEventListener('ended', () => {
@@ -689,7 +716,8 @@
       document.body.classList.add('app-ready');
       window._authEarlyDone = true;
       onDone?.();
-      setTimeout(() => { runBootApp(); scheduleBootRetry(); }, 1200);
+      runBootApp();
+      scheduleBootRetry();
     }, 380);
   }
 
@@ -778,6 +806,7 @@
       app?.classList.add('ready');
       document.body.classList.add('app-ready');
       window._authEarlyDone = true;
+      loadAppScripts();
       return;
     }
 
@@ -820,6 +849,16 @@
       return;
     }
     if (!window._authEarlyBound) bootEarlyAuth();
+  };
+
+  window.retryAppBoot = function () {
+    window._bootAppCalled = false;
+    if (typeof render === 'function') {
+      try { render(); } catch (e) { console.error('retry render', e); }
+      return;
+    }
+    runBootApp();
+    scheduleBootRetry();
   };
 
   window.spawnAuthHeartBurst = spawnAuthHeartBurst;

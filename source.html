@@ -727,8 +727,8 @@ body.view-draw .content{overflow:hidden!important}
           <p style="font-size:.84rem;color:var(--text2)">工作台加载中，请稍候…</p>
         </div>
         <div class="home-quick" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px">
-          <div class="quick-btn" style="padding:14px;text-align:center;border:1px solid var(--border);border-radius:14px" onclick="location.reload()"><div style="font-size:1.3rem">🔄</div><div style="font-size:.82rem;margin-top:4px">刷新页面</div></div>
-          <div class="quick-btn" style="padding:14px;text-align:center;border:1px solid var(--border);border-radius:14px" onclick="if(typeof render==='function')render()"><div style="font-size:1.3rem">🏠</div><div style="font-size:.82rem;margin-top:4px">重新加载</div></div>
+          <div class="quick-btn" style="padding:14px;text-align:center;border:1px solid var(--border);border-radius:14px" onclick="if(typeof retryAppBoot==='function')retryAppBoot()"><div style="font-size:1.3rem">🔄</div><div style="font-size:.82rem;margin-top:4px">重新加载模块</div></div>
+          <div class="quick-btn" style="padding:14px;text-align:center;border:1px solid var(--border);border-radius:14px" onclick="if(typeof render==='function')render();else if(typeof retryAppBoot==='function')retryAppBoot()"><div style="font-size:1.3rem">🏠</div><div style="font-size:.82rem;margin-top:4px">进入工作台</div></div>
         </div>
       </div>
     </main>
@@ -745,6 +745,9 @@ body.view-draw .content{overflow:hidden!important}
 <div class="toast" id="toast"></div>
 <nav class="bottom-nav" id="bottomNav"></nav>
 
+<script src="app-main.js" defer></script>
+<script src="app-mobile.js" defer></script>
+<script src="app-lazy.js" defer></script>
 <script defer>
 function bootApp() {
   try {
@@ -773,7 +776,7 @@ function bootApp() {
   } catch (e) {
     console.error('bootApp', e);
     const c = document.getElementById('content');
-    if (c) c.innerHTML = '<div class="content-inner"><p style="text-align:center;padding:48px 16px;color:var(--danger)">页面加载遇到问题，请刷新重试</p><button class="btn btn-primary" style="margin:12px auto;display:block" onclick="location.reload()">刷新页面</button></div>';
+    if (c) c.innerHTML = '<div class="content-inner"><p style="text-align:center;padding:48px 16px;color:var(--danger)">页面加载遇到问题</p><button class="btn btn-primary" style="margin:12px auto;display:block" onclick="if(typeof retryAppBoot===\'function\')retryAppBoot()">重新加载模块</button></div>';
   }
 }
 window._bootAppFn = bootApp;
