@@ -12,8 +12,10 @@
   function loadOne(src) {
     return new Promise((resolve, reject) => {
       if (document.querySelector(`script[data-lazy="${src}"]`)) { resolve(); return; }
+      const ver = window.__APP_VERSION || localStorage.getItem('app-version') || '';
+      const finalSrc = ver ? `${src}${src.includes('?') ? '&' : '?'}v=${encodeURIComponent(ver)}` : src;
       const s = document.createElement('script');
-      s.src = src;
+      s.src = finalSrc;
       s.dataset.lazy = src;
       s.async = true;
       s.onload = () => resolve();

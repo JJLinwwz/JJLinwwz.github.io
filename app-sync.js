@@ -39,6 +39,7 @@
   const STORAGE_ROLE = 'sync-role';
 
   const STORAGE_NAME = 'sync-display-name';
+  const ROLE_PICKED_SESSION_KEY = 'sync-role-picked-session';
 
   const LOCAL_CANVAS = 'sync-canvas-persist';
 
@@ -571,13 +572,11 @@
   window.cancelRolePicker = cancelRolePicker;
 
   function ensureRolePicker() {
-
-    if (getRole()) {
-
+    const roleInStorage = getRole();
+    const pickedThisSession = sessionStorage.getItem(ROLE_PICKED_SESSION_KEY) === '1';
+    if (roleInStorage && pickedThisSession) {
       syncMyIdentity();
-
       return Promise.resolve();
-
     }
 
     cancelRolePicker();
@@ -600,7 +599,7 @@
 
           <h3>欢迎来到双人小屋</h3>
 
-          <p>选一下你是谁，画板会显示不同颜色哦～</p>
+          <p>${roleInStorage ? '登录成功，请确认一下你是谁～' : '选一下你是谁，画板会显示不同颜色哦～'}</p>
 
           <button type="button" class="sync-role-btn partner" data-role="partner">🎀 我是婉</button>
 
@@ -614,6 +613,7 @@
 
       const finish = () => {
         overlay.remove();
+        if (getRole()) sessionStorage.setItem(ROLE_PICKED_SESSION_KEY, '1');
         if (_rolePickerResolve) {
           const done = _rolePickerResolve;
           _rolePickerResolve = null;
@@ -1458,7 +1458,7 @@
 
     if (!cfgOk()) return false;
 
-    if (!getRole()) await ensureRolePicker();
+    await ensureRolePicker();
 
     syncMyIdentity();
 

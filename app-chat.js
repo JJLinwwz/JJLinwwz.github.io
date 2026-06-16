@@ -73,7 +73,7 @@
       let body = '';
       if (m.type === 'text') body = `<div class="chat-bubble">${esc(m.content || '')}</div>`;
       else if (m.type === 'image') body = `<div class="chat-bubble">${m.content ? `<p>${esc(m.content)}</p>` : ''}<img src="${m.media || m.thumb || ''}" alt="图片" loading="lazy"></div>`;
-      else if (m.type === 'video') body = `<div class="chat-bubble">${m.content ? `<p>${esc(m.content)}</p>` : ''}<video src="${m.media || ''}" controls playsinline preload="metadata"></video></div>`;
+      else if (m.type === 'video') body = `<div class="chat-bubble">${m.content ? `<p>${esc(m.content)}</p>` : ''}<video src="${m.media || ''}" controls playsinline preload="none" poster="${m.thumb || ''}"></video></div>`;
       else if (m.type === 'audio') body = `<div class="chat-bubble"><audio src="${m.media || ''}" controls preload="metadata"></audio></div>`;
       else body = `<div class="chat-bubble">${esc(m.content || '[消息]')}</div>`;
       return `<div class="chat-msg ${cls}" data-id="${esc(m.id || '')}">
@@ -86,8 +86,14 @@
     const map = new Map();
     (chatMessages || []).forEach(m => { if (m.id) map.set(m.id, m); });
     (items || []).forEach(m => { if (m.id) map.set(m.id, m); });
-    chatMessages = [...map.values()].sort((a, b) => (a.ts || 0) - (b.ts || 0));
-    try { localStorage.setItem(LOCAL_CHAT, JSON.stringify(chatMessages.slice(-120))); } catch {}
+    chatMessages = [...map.values()].sort((a, b) => (a.ts || 0) - (b.ts || 0)).slice(-180);
+    try {
+      const cacheRows = chatMessages.slice(-60).map(m => {
+        if (m.type === 'video') return { ...m, media: '', thumb: m.thumb || '' };
+        return m;
+      });
+      localStorage.setItem(LOCAL_CHAT, JSON.stringify(cacheRows));
+    } catch {}
     renderChatMessages();
   }
 
@@ -108,7 +114,7 @@
   }
 
   async function sendChatMessage(type, content, media, thumb) {
-    if (chatSending) return;
+    if (chatSending) { toast('上一条还在发送中，请稍等一下～'); return; }
     const sb = typeof window.getSyncClient === 'function' ? window.getSyncClient() : null;
     if (!sb || !cfgOk()) { toast('请先连接云端并选好人设'); return; }
     if (type === 'text' && !(content || '').trim()) return;
@@ -125,15 +131,18 @@
       name: localStorage.getItem('sync-display-name') || '小伙伴',
     };
     try {
-      const { data, error } = await sb.from('room_messages').insert(entry).select().single();
+      const sendReq = sb.from('room_messages').insert(entry).select().single();
+      const timeoutReq = new Promise((_, reject) => setTimeout(() => reject(new Error('发送超时，请检查网络后重试')), 15000));
+      const { data, error } = await Promise.race([sendReq, timeoutReq]);
       if (error) throw error;
       if (data) mergeMessages([data]);
       const inp = document.getElementById('chatInput');
-      if (inp && type === 'text') inp.value = '';
+      if (inp) inp.value = '';
     } catch (e) {
       toast('发送失败：' + (e.message || '请检查网络'));
+    } finally {
+      chatSending = false;
     }
-    chatSending = false;
   }
 
   function stopChatVoice() {
@@ -187,7 +196,8 @@
         try { img = await compressImageFile(file, 720, 0.65); } catch {}
       }
       if (img.length > 900000) { toast('图片太大，换一张小一点的'); return; }
-      await sendChatMessage('image', '', img, img);
+      const caption = (document.getElementById('chatInput')?.value || '').trim().slice(0, 120);
+      await sendChatMessage('image', caption, img, img);
       toast('图片已发送 🖼', 2000);
     } else if (type === 'video') {
       if (!file.type.startsWith('video/')) { toast('请选择视频'); return; }
@@ -195,7 +205,8 @@
       toast('正在处理视频…');
       const dataUrl = await readFileAsDataURL(file);
       if (dataUrl.length > 9000000) { toast('视频太大，请换短一点的'); return; }
-      await sendChatMessage('video', '', dataUrl);
+      const caption = (document.getElementById('chatInput')?.value || '').trim().slice(0, 120);
+      await sendChatMessage('video', caption, dataUrl, '');
       toast('视频已发送 🎬', 2000);
     }
   }

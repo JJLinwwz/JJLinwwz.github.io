@@ -4,6 +4,8 @@
   const PASS_L2 = '123';
   const KEY_L1 = 'math-auth-l1';
   const KEY = 'math-auth-session';
+  const APP_VERSION = '2026.06.16.1';
+  const APP_VERSION_KEY = 'app-version';
   const BGM_FILE = 'xinyi.mp3';
   const BGM_LITE = 'xinyi-lite.mp3';
   const AUTH_PARTICLES = ['💕', '💗', '💖', '❤️', '🩷', '✨', '⭐', '🌟', '💫', '♡'];
@@ -20,6 +22,33 @@
   let bgmStallTicks = 0;
   let bgmStreamUrl = BGM_FILE;
   let appScriptsLoading = null;
+  window.__APP_VERSION = APP_VERSION;
+
+  function withVersion(src) {
+    const v = encodeURIComponent(APP_VERSION);
+    return `${src}${src.includes('?') ? '&' : '?'}v=${v}`;
+  }
+
+  function ensureFreshAssets() {
+    let prev = '';
+    try { prev = localStorage.getItem(APP_VERSION_KEY) || ''; } catch {}
+    if (prev === APP_VERSION) return false;
+    try { localStorage.setItem(APP_VERSION_KEY, APP_VERSION); } catch {}
+    try { sessionStorage.removeItem('sync-role-picked-session'); } catch {}
+    try {
+      if ('caches' in window) {
+        caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {});
+      }
+    } catch {}
+    try {
+      const u = new URL(location.href);
+      if (u.searchParams.get('_v') === APP_VERSION) return false;
+      u.searchParams.set('_v', APP_VERSION);
+      location.replace(u.toString());
+      return true;
+    } catch {}
+    return false;
+  }
 
   function ssGet(k) {
     try { return sessionStorage.getItem(k); } catch { return null; }
@@ -59,9 +88,10 @@
           return;
         }
         const src = APP_SCRIPTS[i++];
-        if (document.querySelector(`script[src="${src}"]`)) { next(); return; }
+        const srcWithV = withVersion(src);
+        if (document.querySelector(`script[src="${src}"], script[src="${srcWithV}"]`)) { next(); return; }
         const s = document.createElement('script');
-        s.src = src;
+        s.src = srcWithV;
         s.async = false;
         s.onload = next;
         s.onerror = () => { console.warn('script load:', src); next(); };
@@ -811,6 +841,7 @@
   }
 
   function bootEarlyAuth() {
+    if (ensureFreshAssets()) return;
     const gate = document.getElementById('authGate');
     const app = document.querySelector('.app');
     if (!gate) {
